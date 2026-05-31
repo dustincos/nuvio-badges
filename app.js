@@ -31,6 +31,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const newBadgeBorderPicker = document.getElementById('new-badge-border-picker');
     const newBadgeBorderText = document.getElementById('new-badge-border-text');
 
+    // Preset Selection Dropdowns
+    const presetIconSelect = document.getElementById('preset-icon');
+    const presetQualSelect = document.getElementById('preset-qual');
+    const presetDvSelect = document.getElementById('preset-dv');
+    const presetHdrSelect = document.getElementById('preset-hdr');
+    const presetDescSelect = document.getElementById('preset-desc');
+
     const imageBaseURL = 'https://raw.githubusercontent.com/dustincos/nuvio-badges/main/images/';
 
     const ST = {
@@ -98,23 +105,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Preset Pill Option Selection
-    document.querySelectorAll('.preset-opts').forEach(groupContainer => {
-        groupContainer.querySelectorAll('.preset-opt').forEach(opt => {
-            opt.addEventListener('click', () => {
-                groupContainer.querySelectorAll('.preset-opt').forEach(sibling => {
-                    sibling.classList.remove('active');
-                });
-                opt.classList.add('active');
-                
-                const group = groupContainer.getAttribute('data-group');
-                const value = opt.getAttribute('data-value');
-                presetConfig[group] = value;
-                
-                upd();
-            });
-        });
-    });
+    // Preset Selection Change Handlers
+    const updatePresetConfig = () => {
+        presetConfig.icon = presetIconSelect.value;
+        presetConfig.qual = presetQualSelect.value;
+        presetConfig.dv = presetDvSelect.value;
+        presetConfig.hdr = presetHdrSelect.value;
+        presetConfig.desc = presetDescSelect.value;
+        upd();
+    };
+
+    presetIconSelect.addEventListener('change', updatePresetConfig);
+    presetQualSelect.addEventListener('change', updatePresetConfig);
+    presetDvSelect.addEventListener('change', updatePresetConfig);
+    presetHdrSelect.addEventListener('change', updatePresetConfig);
+    presetDescSelect.addEventListener('change', updatePresetConfig);
 
     // --- FUNCTIONAL BADGES COMPILATION ENGINE ---
     const mk = (id, name, pat, img, st, gid) => {
@@ -199,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 1b. SeaDex - right after quality
-        T.push(mk('v-seadex', 'SeaDex', '(?i)\\b(?:seadex|best[\\s._-]?release|alt[\\s._-]?(?:best[\\s._-]?)?release)\\b|\\u1d00\\u029f\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07|\\u0299\\u1d07s\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07', p + '-SeaDex.png', mono ? ST.res : ST.best, 'gv'));
+        T.push(mk('v-seadex', 'SeaDex', '(?i)\\b(?:seadex|best[\\s._-]?release|alt[\\s._-]?(?:best[\\s._-]?)?release)\\b|\\u1d00\\u029f\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07|\\u0299\\u1d07s\\u1d1b \\u0280\\u1d07\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07', p + '-SeaDex.png', mono ? ST.res : ST.best, 'gv'));
 
         // 2. Resolution Category
         T.push(mk('r4', '4K', '(?i)^(?!.*\\b(?:1080[pi]?|720[pi]?)\\b).*?(?:\\b2160[pi]?\\b|\\b4k\\b|\\buhd\\b)', '4k.png', ST.res, 'gr'));
@@ -327,6 +332,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadConfig = () => {
+        // Sync Dropdowns to Config State
+        presetIconSelect.value = presetConfig.icon;
+        presetQualSelect.value = presetConfig.qual;
+        presetDvSelect.value = presetConfig.dv;
+        presetHdrSelect.value = presetConfig.hdr;
+        presetDescSelect.value = presetConfig.desc;
+        
         upd();
     };
 
@@ -341,16 +353,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Show/hide Setup Guide instructions dynamically
         const needsAIOS = presetConfig.qual === 'bgb' || presetConfig.qual === 'pct';
-        const guideSteps = document.querySelectorAll('.guide-step');
+        const guideSteps = document.querySelector('main > article:last-of-type .grid').children;
         
-        if (needsAIOS) {
-            guideSteps[0].style.display = 'flex';
-            guideSteps[1].style.display = 'flex';
-            document.querySelector('.guide-num[id="step-fusion-n"]').textContent = '3';
-        } else {
-            guideSteps[0].style.display = 'none';
-            guideSteps[1].style.display = 'none';
-            document.querySelector('.guide-num[id="step-fusion-n"]').textContent = '1';
+        if (guideSteps && guideSteps.length === 3) {
+            if (needsAIOS) {
+                guideSteps[0].style.display = 'block';
+                guideSteps[1].style.display = 'block';
+                guideSteps[2].querySelector('h5').textContent = '3. Import Filters into Nuvio';
+            } else {
+                guideSteps[0].style.display = 'none';
+                guideSteps[1].style.display = 'none';
+                guideSteps[2].querySelector('h5').textContent = '1. Import Filters into Nuvio';
+            }
         }
 
         initApp();
@@ -441,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
         jsonCodeBlock.textContent = JSON.stringify(badgeConfig, null, 2);
     };
 
-    // --- HIGH-FIDELITY MOCK STREAM RENDERER ---
+    // --- HIGH-FIDELITY MOCK STREAM PREVIEWER ---
     const runLiveMatchTester = () => {
         previewListContainer.innerHTML = '';
         const p = presetConfig.icon;
@@ -571,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (customTitleStr) {
             const customCard = document.createElement('div');
             customCard.className = 'sim-stream-card';
-            customCard.style.border = '1px dashed var(--pico-primary)';
+            customCard.style.border = '1px dashed var(--pico-primary-border-color)';
 
             const parts = customTitleStr.split('|').map(s => s.trim());
             const mockName = parts[0] || 'Scraper';
@@ -667,12 +681,11 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText(textValue).then(() => {
             const toast = document.createElement('div');
             toast.className = 'toast';
-            toast.style.display = 'block';
             toast.textContent = 'Copied to Clipboard!';
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
-                setTimeout(() => document.body.removeChild(toast), 300);
+                setTimeout(() => document.body.removeChild(toast), 350);
             }, 1200);
         });
     };

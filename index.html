@@ -30,60 +30,52 @@
     </nav>
 
     <main class="container">
+        <!-- RESPONSIVE TWO-COLUMN DASHBOARD GRID -->
         <div class="grid">
-            <!-- LEFT COLUMN: PRESETS & RULE CONFIGURATION -->
+            <!-- LEFT COLUMN: SELECTORS & RULES DATABASE -->
             <section>
-                <!-- DYNAMIC QUICK PRESET CARD -->
-                <article class="preset-card">
-                    <header style="margin-bottom: 1rem; border-bottom: 1px solid var(--pico-card-border-color); padding-bottom: 0.5rem;">
-                        <span style="font-weight: bold;">Quick Presets</span>
-                    </header>
+                <article style="margin-top: 0; margin-bottom: 1.5rem;">
+                    <header><b>Quick Presets</b></header>
                     
-                    <div class="preset-group">
-                        <div class="preset-header">Icon Style</div>
-                        <div class="preset-opts" data-group="icon">
-                            <div class="preset-opt active" data-value="colored">Colored</div>
-                            <div class="preset-opt" data-value="mono">Mono</div>
-                        </div>
-                    </div>
+                    <label for="preset-icon">Icon Style
+                        <select id="preset-icon" name="icon" required>
+                            <option value="colored">Colored (Branded PNGs)</option>
+                            <option value="mono">Mono (Monochromatic)</option>
+                        </select>
+                    </label>
 
-                    <div class="preset-group">
-                        <div class="preset-header">Quality System</div>
-                        <div class="preset-opts" data-group="qual">
-                            <div class="preset-opt active" data-value="bgb">Best / Good / OK</div>
-                            <div class="preset-opt" data-value="tier">Tiers (T1/T2/T3)</div>
-                            <div class="preset-opt" data-value="src">Source Only</div>
-                            <div class="preset-opt" data-value="pct">Percentages</div>
-                        </div>
-                    </div>
+                    <label for="preset-qual">Quality System
+                        <select id="preset-qual" name="qual" required>
+                            <option value="bgb">Best / Good / OK</option>
+                            <option value="tier">Tiers (T1/T2/T3)</option>
+                            <option value="src">Source Only</option>
+                            <option value="pct">Percentages</option>
+                        </select>
+                    </label>
 
-                    <div class="preset-group">
-                        <div class="preset-header">Dolby Vision + Audio</div>
-                        <div class="preset-opts" data-group="dv">
-                            <div class="preset-opt active" data-value="combo">Combined Badge</div>
-                            <div class="preset-opt" data-value="sep">Separate Tags</div>
-                        </div>
-                    </div>
+                    <label for="preset-dv">Dolby Vision + Audio
+                        <select id="preset-dv" name="dv" required>
+                            <option value="combo">Combined Badge (Single Chip)</option>
+                            <option value="sep">Separate Tags (Split Chips)</option>
+                        </select>
+                    </label>
 
-                    <div class="preset-group">
-                        <div class="preset-header">HDR Display</div>
-                        <div class="preset-opts" data-group="hdr">
-                            <div class="preset-opt active" data-value="nodv">Only when no DV</div>
-                            <div class="preset-opt" data-value="always">Always (hybrids)</div>
-                        </div>
-                    </div>
+                    <label for="preset-hdr">HDR Display
+                        <select id="preset-hdr" name="hdr" required>
+                            <option value="nodv">Only when no Dolby Vision</option>
+                            <option value="always">Always Display (Hybrids)</option>
+                        </select>
+                    </label>
 
-                    <div class="preset-group">
-                        <div class="preset-header">Description</div>
-                        <div class="preset-opts" data-group="desc">
-                            <div class="preset-opt active" data-value="short">Service + Filename</div>
-                            <div class="preset-opt" data-value="fn">Filename Only</div>
-                        </div>
-                    </div>
+                    <label for="preset-desc">Description Format
+                        <select id="preset-desc" name="desc" required>
+                            <option value="short">Service + Filename</option>
+                            <option value="fn">Filename Only</option>
+                        </select>
+                    </label>
                 </article>
 
-                <!-- CUSTOM BADGE RULES MANAGER -->
-                <article style="margin-top: 0;">
+                <article>
                     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <span style="font-weight: bold;">Rules Database</span>
                         <span id="badge-count-badge" style="font-size: 0.75rem; color: var(--pico-muted-color);">0 Active</span>
@@ -195,69 +187,60 @@
                 </article>
             </section>
 
-            <!-- RIGHT COLUMN: SETUP GUIDE & DYNAMIC LIVE PREVIEWS -->
+            <!-- RIGHT COLUMN: STREAM PREVIEWS & CODE INSPECTION -->
             <section>
-                <!-- SETUP INTEGRATION GUIDE -->
-                <article class="guide-card">
-                    <header style="margin-bottom: 1rem; border-bottom: 1px solid var(--pico-card-border-color); padding-bottom: 0.5rem;">
-                        <span style="font-weight: bold;">Integration Guide</span>
-                    </header>
-
-                    <div class="guide-step">
-                        <div class="guide-num">1</div>
-                        <div class="guide-content">
-                            <div class="guide-title">Scraper Template</div>
-                            <div class="guide-desc">In AIOStreams → Featured Templates → Select <b>Tamtaro Complete Setup</b> and load it.</div>
-                        </div>
-                    </div>
-
-                    <div class="guide-step">
-                        <div class="guide-num">2</div>
-                        <div class="guide-content">
-                            <div class="guide-title">Configure Formatter</div>
-                            <div class="guide-desc">AIOStreams → Formatter → Custom → copy and replace both fields below, then Save.</div>
-                            <div class="guide-btn-row">
-                                <button class="guide-btn" id="btn-copy-fname">Copy Name Formatter</button>
-                                <button class="guide-btn" id="btn-copy-fdesc">Copy Desc Formatter</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="guide-step">
-                        <div class="guide-num">3</div>
-                        <div class="guide-content">
-                            <div class="guide-title">Import JSON Filters</div>
-                            <div class="guide-desc">In <b>Nuvio</b> (Settings → Connected Services → Badge URLs) paste your generated URL:</div>
-                            <button class="guide-btn" id="btn-copy-import-url" style="margin-top: 0.45rem; width: 100%; text-align: center;">
-                                Copy Badges Import URL
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- REAL-TIME PREVIEW SIMULATOR -->
                 <article style="margin-top: 0; margin-bottom: 1.5rem;">
-                    <header style="margin-bottom: 0.8rem;"><b>Interactive Match Preview</b></header>
+                    <header><b>Scraper Match Preview</b></header>
 
                     <label style="margin-bottom: 1rem;">
-                        Simulate Custom Stream Title / Description
+                        Simulate Custom Title Search
                         <input type="text" id="test-stream-title" value="Vidlink | 1080p | TrueHD Atmos | Dual-Audio | WebDL">
                     </label>
 
                     <div id="dynamic-preview-list">
-                        <!-- Predefined and Custom matches render here -->
+                        <!-- Simulated torrent results render here -->
                     </div>
                 </article>
 
-                <!-- CODE CODE BLOCK VIEWPORT -->
                 <article>
-                    <header><b>Generated badges.json Config</b></header>
-                    <div class="code-viewport">
-                        <pre><code id="json-code-block" class="language-json">Loading JSON data...</code></pre>
-                    </div>
+                    <details>
+                        <summary><b>badges.json Code Inspector</b></summary>
+                        <div class="code-viewport" style="margin-top: 0.5rem;">
+                            <pre><code id="json-code-block" class="language-json">Loading JSON data...</code></pre>
+                        </div>
+                    </details>
                 </article>
             </section>
         </div>
+
+        <!-- FULL-WIDTH BOTTOM SECTION: SETUP SETUP GUIDE -->
+        <article style="margin-top: 1.5rem;">
+            <header><b>Integration Setup Guide</b></header>
+            
+            <div class="grid">
+                <div>
+                    <h5>1. Select Scraper Template</h5>
+                    <p style="font-size: 0.82rem; color: var(--pico-muted-color);">In AIOStreams → Featured Templates → Select <b>Tamtaro Complete Setup</b>, load it, and follow the setup wizard.</p>
+                </div>
+                
+                <div>
+                    <h5>2. Replace Formatter Codes</h5>
+                    <p style="font-size: 0.82rem; color: var(--pico-muted-color);">Go to AIOStreams → Formatter → Custom Formatter, copy and replace the fields below, then Save.</p>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <button class="outline" id="btn-copy-fname" style="font-size: 0.72rem; padding: 0.4rem 0.8rem;">Copy Name Formatter</button>
+                        <button class="outline" id="btn-copy-fdesc" style="font-size: 0.72rem; padding: 0.4rem 0.8rem;">Copy Desc Formatter</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h5>3. Import Filters into Nuvio</h5>
+                    <p style="font-size: 0.82rem; color: var(--pico-muted-color);">Open Nuvio (Settings → Connected Services → Badge URLs) and paste your custom filters preset URL:</p>
+                    <button id="btn-copy-import-url" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; width: 100%; margin-top: 0.5rem;">
+                        Copy Badges Preset URL
+                    </button>
+                </div>
+            </div>
+        </article>
     </main>
 </body>
 </html>
