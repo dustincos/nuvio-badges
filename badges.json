@@ -1,0 +1,213 @@
+{
+  "groups": [
+    {
+      "id": "gq",
+      "name": "Quality",
+      "color": "#FF27C04F",
+      "isExpanded": true
+    },
+    {
+      "id": "gp",
+      "name": "Providers",
+      "color": "#FF00FFFF",
+      "isExpanded": true
+    }
+  ],
+  "filters": [
+    {
+      "borderColor": "#FF27C04F",
+      "groupId": "gq",
+      "id": "q-4k",
+      "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/colored-4k.png",
+      "isEnabled": true,
+      "name": "4K",
+      "pattern": "(?i)\\b(?:4k|2160p|uhd)\\b",
+      "tagColor": "#E600E932",
+      "tagStyle": "filled",
+      "textColor": "#27C04F",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF27C04F",
+      "groupId": "gq",
+      "id": "q-1080p",
+      "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/colored-1080p.png",
+      "isEnabled": true,
+      "name": "1080p",
+      "pattern": "(?i)\\b(?:1080p|fhd)\\b",
+      "tagColor": "#E600E932",
+      "tagStyle": "filled",
+      "textColor": "#27C04F",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF27C04F",
+      "groupId": "gq",
+      "id": "q-720p",
+      "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/colored-720p.png",
+      "isEnabled": true,
+      "name": "720p",
+      "pattern": "(?i)\\b(?:720p|hd)\\b",
+      "tagColor": "#E600E932",
+      "tagStyle": "filled",
+      "textColor": "#27C04F",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF00D2FF",
+      "groupId": "gp",
+      "id": "p-vidlink",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "⚡ Vidlink",
+      "pattern": "(?i)vidlink",
+      "tagColor": "#FF00D2FF",
+      "tagStyle": "outlined",
+      "textColor": "#00D2FF",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FFFF0055",
+      "groupId": "gp",
+      "id": "p-moviebox",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "🎬 MovieBox",
+      "pattern": "(?i)moviebox",
+      "tagColor": "#FFFF0055",
+      "tagStyle": "outlined",
+      "textColor": "#FF0055",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF7F00FF",
+      "groupId": "gp",
+      "id": "p-netmirror",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "📺 NetMirror",
+      "pattern": "(?i)netmirror",
+      "tagColor": "#FF7F00FF",
+      "tagStyle": "outlined",
+      "textColor": "#7F00FF",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FFFFD700",
+      "groupId": "gp",
+      "id": "p-4khdhub",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "🚀 4KHDHub",
+      "pattern": "(?i)4khdhub",
+      "tagColor": "#FFFFD700",
+      "tagStyle": "outlined",
+      "textColor": "#FFD700",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF00FF66",
+      "groupId": "gp",
+      "id": "p-movix",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "🍿 Movix",
+      "pattern": "(?i)movix",
+      "tagColor": "#FF00FF66",
+      "tagStyle": "outlined",
+      "textColor": "#00FF66",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FFFF3300",
+      "groupId": "gp",
+      "id": "p-notorrent",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "🔗 NoTorrent",
+      "pattern": "(?i)notorrent",
+      "tagColor": "#FFFF3300",
+      "tagStyle": "outlined",
+      "textColor": "#FF3300",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF9933FF",
+      "groupId": "gp",
+      "id": "p-playimdb",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "🎭 PlayImdb",
+      "pattern": "(?i)playimdb",
+      "tagColor": "#FF9933FF",
+      "tagStyle": "outlined",
+      "textColor": "#9933FF",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF33CCFF",
+      "groupId": "gp",
+      "id": "p-videasy",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "⭐ Videasy",
+      "pattern": "(?i)videasy",
+      "tagColor": "#FF33CCFF",
+      "tagStyle": "outlined",
+      "textColor": "#33CCFF",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FFFF9900",
+      "groupId": "gp",
+      "id": "p-vidfast",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "⚡ VidFastPro",
+      "pattern": "(?i)vidfast",
+      "tagColor": "#FFFF9900",
+      "tagStyle": "outlined",
+      "textColor": "#FF9900",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FFCC00FF",
+      "groupId": "gp",
+      "id": "p-xpass",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "🔮 Xpass",
+      "pattern": "(?i)xpass",
+      "tagColor": "#FFCC00FF",
+      "tagStyle": "outlined",
+      "textColor": "#CC00FF",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FF00E5FF",
+      "groupId": "gp",
+      "id": "p-autoembed",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "💎 AutoEmbed",
+      "pattern": "(?i)autoembed",
+      "tagColor": "#FF00E5FF",
+      "tagStyle": "outlined",
+      "textColor": "#00E5FF",
+      "type": "filter"
+    },
+    {
+      "borderColor": "#FFFF0033",
+      "groupId": "gp",
+      "id": "p-dahmermovies",
+      "imageURL": "",
+      "isEnabled": true,
+      "name": "🔥 DahmerMovies",
+      "pattern": "(?i)dahmermovies",
+      "tagColor": "#FFFF0033",
+      "tagStyle": "outlined",
+      "textColor": "#FF0033",
+      "type": "filter"
+    }
+  ]
+}
