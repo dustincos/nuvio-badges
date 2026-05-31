@@ -31,13 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const newBadgeBorderPicker = document.getElementById('new-badge-border-picker');
     const newBadgeBorderText = document.getElementById('new-badge-border-text');
 
-    // Preset Selection Dropdowns
-    const presetIconSelect = document.getElementById('preset-icon');
-    const presetQualSelect = document.getElementById('preset-qual');
-    const presetDvSelect = document.getElementById('preset-dv');
-    const presetHdrSelect = document.getElementById('preset-hdr');
-    const presetDescSelect = document.getElementById('preset-desc');
-
     const imageBaseURL = 'https://raw.githubusercontent.com/dustincos/nuvio-badges/main/images/';
 
     const ST = {
@@ -105,21 +98,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Preset Selection Change Handlers
-    const updatePresetConfig = () => {
-        presetConfig.icon = presetIconSelect.value;
-        presetConfig.qual = presetQualSelect.value;
-        presetConfig.dv = presetDvSelect.value;
-        presetConfig.hdr = presetHdrSelect.value;
-        presetConfig.desc = presetDescSelect.value;
-        upd();
-    };
-
-    presetIconSelect.addEventListener('change', updatePresetConfig);
-    presetQualSelect.addEventListener('change', updatePresetConfig);
-    presetDvSelect.addEventListener('change', updatePresetConfig);
-    presetHdrSelect.addEventListener('change', updatePresetConfig);
-    presetDescSelect.addEventListener('change', updatePresetConfig);
+    // Preset Option Click Binders
+    document.querySelectorAll('.preset-opts').forEach(groupContainer => {
+        groupContainer.querySelectorAll('.preset-opt').forEach(opt => {
+            opt.addEventListener('click', () => {
+                groupContainer.querySelectorAll('.preset-opt').forEach(sibling => {
+                    sibling.classList.remove('active');
+                });
+                opt.classList.add('active');
+                
+                const group = groupContainer.getAttribute('data-group');
+                const value = opt.getAttribute('data-value');
+                presetConfig[group] = value;
+                
+                upd();
+            });
+        });
+    });
 
     // --- FUNCTIONAL BADGES COMPILATION ENGINE ---
     const mk = (id, name, pat, img, st, gid) => {
@@ -204,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 1b. SeaDex - right after quality
-        T.push(mk('v-seadex', 'SeaDex', '(?i)\\b(?:seadex|best[\\s._-]?release|alt[\\s._-]?(?:best[\\s._-]?)?release)\\b|\\u1d00\\u029f\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07|\\u0299\\u1d07s\\u1d1b \\u0280\\u1d07\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07', p + '-SeaDex.png', mono ? ST.res : ST.best, 'gv'));
+        T.push(mk('v-seadex', 'SeaDex', '(?i)\\b(?:seadex|best[\\s._-]?release|alt[\\s._-]?(?:best[\\s._-]?)?release)\\b|\\u1d00\\u029f\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07|\\u0299\\u1d07s\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07', p + '-SeaDex.png', mono ? ST.res : ST.best, 'gv'));
 
         // 2. Resolution Category
         T.push(mk('r4', '4K', '(?i)^(?!.*\\b(?:1080[pi]?|720[pi]?)\\b).*?(?:\\b2160[pi]?\\b|\\b4k\\b|\\buhd\\b)', '4k.png', ST.res, 'gr'));
@@ -332,12 +327,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadConfig = () => {
-        // Sync Dropdowns to Config State
-        presetIconSelect.value = presetConfig.icon;
-        presetQualSelect.value = presetConfig.qual;
-        presetDvSelect.value = presetConfig.dv;
-        presetHdrSelect.value = presetConfig.hdr;
-        presetDescSelect.value = presetConfig.desc;
+        // Sync Visual Active States on Start
+        document.querySelectorAll('.preset-opts').forEach(groupContainer => {
+            const group = groupContainer.getAttribute('data-group');
+            const defaultValue = presetConfig[group];
+            
+            groupContainer.querySelectorAll('.preset-opt').forEach(opt => {
+                if (opt.getAttribute('data-value') === defaultValue) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+        });
         
         upd();
     };

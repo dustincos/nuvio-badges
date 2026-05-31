@@ -74,6 +74,81 @@
     cursor: pointer;
 }
 
+/* --- GLOWING ULTRAVIOLET / SLATE PILL BUTTONS --- */
+.preset-group {
+    margin-bottom: 1.25rem;
+}
+
+.preset-group:last-child {
+    margin-bottom: 0;
+}
+
+.preset-header {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pico-muted-color);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.preset-opts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.preset-opt {
+    padding: 0.4rem 0.8rem 0.4rem 1.6rem;
+    border: 1px solid var(--pico-border-color);
+    border-radius: 8px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: var(--pico-muted-color);
+    background-color: rgba(45, 49, 60, 0.35); /* Translucent dark slate */
+    transition: all 0.15s ease;
+    position: relative;
+    user-select: none;
+}
+
+.preset-opt:hover {
+    border-color: var(--pico-primary-hover);
+    color: var(--pico-color);
+    background-color: rgba(45, 49, 60, 0.5);
+}
+
+.preset-opt.active {
+    border-color: var(--pico-primary); /* Glowing Ultraviolet/Indigo framework boundary */
+    color: #ffffff;
+    background-color: rgba(138, 75, 241, 0.12); /* Ultraviolet glass glow tint */
+    box-shadow: 0 0 12px rgba(138, 75, 241, 0.15); /* Soft shadow aura */
+}
+
+.preset-opt::before {
+    content: '';
+    position: absolute;
+    left: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid var(--pico-border-color);
+    transition: all 0.15s ease;
+}
+
+.preset-opt.active::before {
+    content: '✓';
+    border-color: var(--pico-primary);
+    background-color: var(--pico-primary);
+    color: var(--pico-primary-inverse);
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
 .badges-row {
     display: flex;
     flex-wrap: wrap;

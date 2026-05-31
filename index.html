@@ -32,47 +32,54 @@
     <main class="container">
         <!-- RESPONSIVE TWO-COLUMN DASHBOARD GRID -->
         <div class="grid">
-            <!-- LEFT COLUMN: SELECTORS & RULES DATABASE -->
+            <!-- LEFT COLUMN: PILL PRESETS & RULES DATABASE -->
             <section>
                 <article style="margin-top: 0; margin-bottom: 1.5rem;">
-                    <header><b>Quick Presets</b></header>
+                    <header style="margin-bottom: 1rem; border-bottom: 1px solid var(--pico-card-border-color); padding-bottom: 0.5rem;">
+                        <span style="font-weight: bold;">Quick Presets</span>
+                    </header>
                     
-                    <label for="preset-icon">Icon Style
-                        <select id="preset-icon" name="icon" required>
-                            <option value="colored">Colored (Branded PNGs)</option>
-                            <option value="mono">Mono (Monochromatic)</option>
-                        </select>
-                    </label>
+                    <div class="preset-group">
+                        <div class="preset-header">Icon Style</div>
+                        <div class="preset-opts" data-group="icon">
+                            <div class="preset-opt active" data-value="colored">Colored</div>
+                            <div class="preset-opt" data-value="mono">Mono</div>
+                        </div>
+                    </div>
 
-                    <label for="preset-qual">Quality System
-                        <select id="preset-qual" name="qual" required>
-                            <option value="bgb">Best / Good / OK</option>
-                            <option value="tier">Tiers (T1/T2/T3)</option>
-                            <option value="src">Source Only</option>
-                            <option value="pct">Percentages</option>
-                        </select>
-                    </label>
+                    <div class="preset-group">
+                        <div class="preset-header">Quality System</div>
+                        <div class="preset-opts" data-group="qual">
+                            <div class="preset-opt active" data-value="bgb">Best / Good / OK</div>
+                            <div class="preset-opt" data-value="tier">Tiers (T1/T2/T3)</div>
+                            <div class="preset-opt" data-value="src">Source Only</div>
+                            <div class="preset-opt" data-value="pct">Percentages</div>
+                        </div>
+                    </div>
 
-                    <label for="preset-dv">Dolby Vision + Audio
-                        <select id="preset-dv" name="dv" required>
-                            <option value="combo">Combined Badge (Single Chip)</option>
-                            <option value="sep">Separate Tags (Split Chips)</option>
-                        </select>
-                    </label>
+                    <div class="preset-group">
+                        <div class="preset-header">Dolby Vision + Audio</div>
+                        <div class="preset-opts" data-group="dv">
+                            <div class="preset-opt active" data-value="combo">Combined Badge</div>
+                            <div class="preset-opt" data-value="sep">Separate Tags</div>
+                        </div>
+                    </div>
 
-                    <label for="preset-hdr">HDR Display
-                        <select id="preset-hdr" name="hdr" required>
-                            <option value="nodv">Only when no Dolby Vision</option>
-                            <option value="always">Always Display (Hybrids)</option>
-                        </select>
-                    </label>
+                    <div class="preset-group">
+                        <div class="preset-header">HDR Display</div>
+                        <div class="preset-opts" data-group="hdr">
+                            <div class="preset-opt active" data-value="nodv">Only when no DV</div>
+                            <div class="preset-opt" data-value="always">Always (hybrids)</div>
+                        </div>
+                    </div>
 
-                    <label for="preset-desc">Description Format
-                        <select id="preset-desc" name="desc" required>
-                            <option value="short">Service + Filename</option>
-                            <option value="fn">Filename Only</option>
-                        </select>
-                    </label>
+                    <div class="preset-group">
+                        <div class="preset-header">Description</div>
+                        <div class="preset-opts" data-group="desc">
+                            <div class="preset-opt active" data-value="short">Service + Filename</div>
+                            <div class="preset-opt" data-value="fn">Filename Only</div>
+                        </div>
+                    </div>
                 </article>
 
                 <article>
