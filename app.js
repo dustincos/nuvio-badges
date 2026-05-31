@@ -1,13 +1,13 @@
-// Nuvio Badges Studio core application logic
+// Nuvio Badges Studio Apple-HIG Application Controller
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- STATE MANAGEMENT ---
+    // --- DATABASE STATE ---
     let badgeConfig = {
         groups: [],
         filters: []
     };
 
-    // --- ELEMENTS ---
+    // --- DOM ELEMENT SELECTIONS ---
     const groupsContainer = document.getElementById('groups-accordion-container');
     const badgeCountText = document.getElementById('badge-count-badge');
     const jsonCodeBlock = document.getElementById('json-code-block');
@@ -17,11 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const simBadgesRow = document.getElementById('n-badges-row');
     const addBadgeForm = document.getElementById('add-badge-form');
     
-    // Tab switching
-    const tabs = document.querySelectorAll('.tab-btn');
+    // Apple Segmented Tabs
+    const segmentBtns = document.querySelectorAll('.segment-btn');
+    const segmentPill = document.getElementById('segment-pill');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    // Dynamic form elements
+    // Dynamic Form Bindings
     const iconStyleRadio = document.getElementsByName('icon-style');
     const shieldsParams = document.getElementById('shields-params');
     const customUrlParam = document.getElementById('custom-url-param');
@@ -30,11 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const newBadgeBorderPicker = document.getElementById('new-badge-border-picker');
     const newBadgeBorderText = document.getElementById('new-badge-border-text');
 
-    // --- COLOR SYNCING ---
-    const syncColorPicker = (picker, textInput) => {
+    // --- COLOR WRAPPER BINDINGS ---
+    const bindColorPicker = (picker, textInput) => {
         picker.addEventListener('input', (e) => {
             textInput.value = e.target.value.toUpperCase();
-            updateFormStyles();
         });
         textInput.addEventListener('input', (e) => {
             let val = e.target.value;
@@ -42,24 +42,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (val.length === 7 || val.length === 9) {
                 picker.value = val.substring(0, 7);
             }
-            updateFormStyles();
         });
     };
-    syncColorPicker(newBadgeColorPicker, newBadgeColorText);
-    syncColorPicker(newBadgeBorderPicker, newBadgeBorderText);
+    bindColorPicker(newBadgeColorPicker, newBadgeColorText);
+    bindColorPicker(newBadgeBorderPicker, newBadgeBorderText);
 
-    // --- TAB NAVIGATION ---
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
+    // --- iOS TAB ACCORDION CONTROLLERS ---
+    segmentBtns.forEach((btn, index) => {
+        btn.addEventListener('click', () => {
+            segmentBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(c => c.classList.add('hidden'));
             
-            tab.classList.add('active');
-            document.getElementById(tab.getAttribute('data-tab')).classList.remove('hidden');
+            btn.classList.add('active');
+            
+            // Translate sliding pill selector
+            segmentPill.style.transform = `translateX(${index * 100}%)`;
+            
+            document.getElementById(btn.getAttribute('data-tab')).classList.remove('hidden');
         });
     });
 
-    // Toggle Icon Style parameters
+    // Toggle Icon parameters
     iconStyleRadio.forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.value === 'shields') {
@@ -72,8 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- LOAD DEFAULT CONFIG ---
-    // Try fetching badges.json, fallback to embedded model if it fails (CORS locally)
+    // --- FETCH DATA CONTROLLER ---
     const loadConfig = async () => {
         try {
             const response = await fetch('./badges.json');
@@ -81,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 badgeConfig = await response.json();
                 console.log('✅ Loaded badges.json dynamically');
             } else {
-                throw new Error('Local load failed');
+                throw new Error('Local fetch blocked');
             }
         } catch (e) {
             console.log('⚠️ Fetch failed. Falling back to embedded configuration data.');
@@ -97,16 +99,16 @@ document.addEventListener('DOMContentLoaded', () => {
         runLiveMatchTester();
     };
 
-    // --- RENDER GROUPS & FILTERS ---
+    // --- RENDER SIDEBAR CONFIGURATOR ---
     const renderAccordion = () => {
         groupsContainer.innerHTML = '';
         
         if (!badgeConfig.groups || badgeConfig.groups.length === 0) {
-            groupsContainer.innerHTML = '<div class="loading-state">No group metadata available.</div>';
+            groupsContainer.innerHTML = '<div class="loading-state">No configuration metadata.</div>';
             return;
         }
 
-        badgeConfig.groups.forEach((group, index) => {
+        badgeConfig.groups.forEach((group) => {
             const accordionItem = document.createElement('div');
             accordionItem.className = `accordion-item ${group.isExpanded ? 'open' : ''}`;
             accordionItem.id = `group-item-${group.id}`;
@@ -115,10 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
             header.className = 'accordion-header';
             header.innerHTML = `
                 <div class="accordion-title">
-                    <span class="accordion-indicator-dot" style="background-color: ${group.color || '#FFFFFF'}; box-shadow: 0 0 8px ${group.color || '#FFFFFF'}"></span>
+                    <span class="accordion-indicator-dot" style="background-color: ${group.color || '#FFFFFF'}"></span>
                     <span>${group.name}</span>
                 </div>
-                <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
             `;
 
             header.addEventListener('click', () => {
@@ -134,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const filtersInGroup = badgeConfig.filters.filter(f => f.groupId === group.id);
             
             if (filtersInGroup.length === 0) {
-                body.innerHTML = '<p class="loading-state">No active filters in this category.</p>';
+                body.innerHTML = '<p class="loading-state">No filters active.</p>';
             } else {
                 const listContainer = document.createElement('div');
                 listContainer.className = 'badge-list-container';
@@ -143,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const item = document.createElement('div');
                     item.className = 'badge-list-item';
                     
-                    // High-DPI preview resolution enhancement
                     let previewUrl = filter.imageURL;
                     if (previewUrl && previewUrl.includes('shields.io') && !previewUrl.includes('scale=')) {
                         previewUrl += previewUrl.includes('?') ? '&scale=2' : '?scale=2';
@@ -156,21 +157,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="badge-pattern-text">${filter.pattern}</span>
                         </div>
                         <div class="badge-preview-cell">
-                            ${previewUrl ? `<img class="badge-preview-img" src="${previewUrl}" alt="${filter.name}">` : `<span class="badge-preview-chip" style="background-color: ${filter.tagColor || 'transparent'}; border: 1px solid ${filter.borderColor || 'transparent'}; color: ${filter.textColor || '#FFFFFF'}">${filter.name}</span>`}
+                            ${previewUrl ? `<img class="badge-preview-img" src="${previewUrl}" alt="${filter.name}">` : `<span class="badge-preview-chip" style="background-color: ${parseARGBtoRGBA(filter.tagColor) || 'transparent'}; border: 1px solid ${parseARGBtoRGBA(filter.borderColor) || 'transparent'}; color: ${parseARGBtoRGBA(filter.textColor) || '#FFFFFF'}">${filter.name}</span>`}
                         </div>
                         <button class="badge-action-btn" data-id="${filter.id}">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     `;
 
-                    // Checkbox toggle
+                    // Checkbox binding
                     item.querySelector('.badge-checkbox').addEventListener('change', (e) => {
                         filter.isEnabled = e.target.checked;
                         updateJSONViewer();
                         runLiveMatchTester();
                     });
 
-                    // Delete button
+                    // Delete binding
                     item.querySelector('.badge-action-btn').addEventListener('click', () => {
                         badgeConfig.filters = badgeConfig.filters.filter(f => f.id !== filter.id);
                         renderAccordion();
@@ -188,58 +189,59 @@ document.addEventListener('DOMContentLoaded', () => {
             groupsContainer.appendChild(accordionItem);
         });
 
-        // Update active badge display stats
+        // Update display count
         const activeCount = badgeConfig.filters.filter(f => f.isEnabled).length;
         badgeCountText.textContent = `${activeCount} / ${badgeConfig.filters.length} Enabled`;
     };
 
-    // --- JSON INSPECTOR VIEW ---
+    // --- JSON VIEWER CONTROLLER ---
     const updateJSONViewer = () => {
         const cleanJSON = JSON.stringify(badgeConfig, null, 2);
         jsonCodeBlock.textContent = cleanJSON;
     };
 
-    // --- LIVE SIMULATED MATCHING ENGINE ---
+    // --- PREMIUM SIMULATOR MATCHING ENGINE ---
     const runLiveMatchTester = () => {
         const streamStr = testerInput.value.trim();
         if (!streamStr) {
-            simTitle.textContent = "Untitled Stream";
-            simDesc.textContent = "No metadata";
+            simTitle.textContent = "No stream data";
+            simDesc.textContent = "";
             simBadgesRow.innerHTML = '';
             return;
         }
 
-        // Mock parser split details (similar to StreamsRepository.kt parsing)
+        // Exact QuickJS parse replication (Splits into name and title components)
         const parts = streamStr.split('|').map(s => s.trim());
-        const providerName = parts[0] || 'Unknown Source';
-        
-        simTitle.textContent = parts.slice(0, 2).join(' | ');
+        const mockName = parts[0] || 'Source Scraper';
+        const mockTitle = parts.slice(1).join(' | ');
 
-        // Construct simulated description components
-        let size = '1.82 GB';
+        simTitle.textContent = mockTitle ? `${mockName} | ${mockTitle}` : mockName;
+
+        // Extract and construct simulated description subtitle candidate
+        let size = '1.45 GB';
         let quality = '1080p';
         let language = 'Multi';
 
         if (streamStr.toLowerCase().includes('4k') || streamStr.toLowerCase().includes('2160p')) {
             quality = '4K';
-            size = '14.50 GB';
+            size = '12.80 GB';
         } else if (streamStr.toLowerCase().includes('720p')) {
             quality = '720p';
-            size = '740 MB';
+            size = '680 MB';
         }
 
         if (streamStr.toLowerCase().includes('french')) language = 'French';
         else if (streamStr.toLowerCase().includes('spanish')) language = 'Spanish';
 
-        simDesc.textContent = `${quality} • ${size} • ${language}`;
+        const mockDesc = `${quality} • ${size} • ${language}`;
+        simDesc.textContent = mockDesc;
 
-        // Matches builder
+        // Clear and evaluate badge candidate rows (matching StreamItem.name + StreamItem.description)
         simBadgesRow.innerHTML = '';
         const activeFilters = badgeConfig.filters.filter(f => f.isEnabled);
 
         activeFilters.forEach(filter => {
             try {
-                // Regex parsing with case-insensitive option (?i)
                 let cleanedPattern = filter.pattern;
                 let flags = 'g';
                 
@@ -250,55 +252,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const regex = new RegExp(cleanedPattern, flags);
                 
-                // Nuvio matches against full Title + Description candidate strings
-                const combinedCandidate = `${streamStr} ${quality} ${size} ${language}`;
+                // Matches against StreamItem name candidate OR StreamItem description candidate
+                const isNameMatch = regex.test(mockName);
+                const isDescMatch = regex.test(mockDesc) || regex.test(mockTitle);
                 
-                if (regex.test(combinedCandidate)) {
-                    // Create visual chip preview
+                if (isNameMatch || isDescMatch) {
                     const chip = document.createElement('div');
                     chip.className = 'n-badge-chip';
                     
-                    // Parse ARGB colors for web styling
                     const webBgColor = parseARGBtoRGBA(filter.tagColor);
                     const webBorderColor = parseARGBtoRGBA(filter.borderColor);
                     const webTextColor = parseARGBtoRGBA(filter.textColor) || '#FFFFFF';
 
                     if (filter.tagStyle === 'filled') {
-                        chip.style.backgroundColor = webBgColor || '#27C04F';
+                        chip.style.backgroundColor = webBgColor || 'rgba(255,255,255,0.06)';
                     } else if (filter.tagStyle === 'outlined') {
-                        chip.style.border = `1px solid ${webBorderColor || '#00D2FF'}`;
-                    } else if (filter.tagStyle === 'filled and bordered') {
-                        chip.style.backgroundColor = webBgColor || 'rgba(255,255,255,0.05)';
                         chip.style.border = `1px solid ${webBorderColor || '#FFFFFF'}`;
+                    } else if (filter.tagStyle === 'filled and bordered') {
+                        chip.style.backgroundColor = webBgColor || 'rgba(255,255,255,0.04)';
+                        chip.style.border = `1px solid ${webBorderColor || 'rgba(255,255,255,0.1)'}`;
                     }
                     
                     chip.style.color = webTextColor;
 
-                    // Support dynamic retina scaling for dynamic shields
                     let finalImageURL = filter.imageURL;
                     if (finalImageURL && finalImageURL.includes('shields.io')) {
-                        finalImageURL += finalImageURL.includes('?') ? '&scale=3' : '?scale=3';
+                        finalImageURL += finalImageURL.includes('?') ? '&scale=2' : '?scale=2';
                     }
 
                     if (finalImageURL) {
                         chip.innerHTML = `<img src="${finalImageURL}" alt="${filter.name}">`;
                     } else {
                         chip.textContent = filter.name;
-                        chip.style.fontSize = '10px';
+                        chip.style.fontSize = '9px';
                         chip.style.fontWeight = 'bold';
                     }
 
                     simBadgesRow.appendChild(chip);
                 }
             } catch (err) {
-                console.error(`Invalid regex rule for badge ${filter.name}:`, err);
+                console.error(`Invalid matching rule for ${filter.name}:`, err);
             }
         });
     };
 
     testerInput.addEventListener('input', runLiveMatchTester);
 
-    // --- FORM SUBMISSION (ADD BADGE) ---
+    // --- FORM HANDLER (ADD BADGE) ---
     addBadgeForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -318,16 +318,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const shieldLabel = document.getElementById('new-badge-label').value.trim() || badgeName;
             const shieldColor = newBadgeColorText.value.trim().replace('#', '');
             
-            // Generate exact shields.io dynamic path
             const formattedLabel = encodeURIComponent(shieldLabel.replace(/_/g, ' '));
-            imageURL = `https://&scale=3`;
+            imageURL = `https://img.shields.io/badge/${formattedLabel}-${shieldColor}.png?style=flat&scale=3`;
             
             tagColor = parseRGBtoARGB(newBadgeColorText.value.trim());
             borderColor = parseRGBtoARGB(newBadgeBorderText.value.trim());
             textColor = parseRGBtoARGB(newBadgeColorText.value.trim());
         } else {
             imageURL = document.getElementById('new-badge-imageurl').value.trim();
-            tagColor = '#00000000'; // Transparent default
+            tagColor = '#00000000';
             borderColor = parseRGBtoARGB(newBadgeBorderText.value.trim());
             textColor = '#FFFFFFFF';
         }
@@ -346,10 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
             type: "filter"
         };
 
-        // Add filter, trigger UI reload, switch back to list view
         badgeConfig.filters.push(newFilter);
         
-        // Find if this group accordion item is open
         const groupObj = badgeConfig.groups.find(g => g.id === badgeGroup);
         if (groupObj) groupObj.isExpanded = true;
 
@@ -357,17 +354,17 @@ document.addEventListener('DOMContentLoaded', () => {
         updateJSONViewer();
         runLiveMatchTester();
 
-        // Reset form details and switch view tab
+        // Reset forms & switch tab back
         addBadgeForm.reset();
-        newBadgeColorText.value = '#00FFFF';
-        newBadgeColorPicker.value = '#00FFFF';
-        newBadgeBorderText.value = '#00FFFF';
-        newBadgeBorderPicker.value = '#00FFFF';
+        newBadgeColorText.value = '#00D2FF';
+        newBadgeColorPicker.value = '#00D2FF';
+        newBadgeBorderText.value = '#00D2FF';
+        newBadgeBorderPicker.value = '#00D2FF';
         
         document.querySelector('[data-tab="tab-edit"]').click();
     });
 
-    // --- CODES AND PARSERS ---
+    // --- UTILITIES AND CONVERTERS ---
     const parseARGBtoRGBA = (argbStr) => {
         if (!argbStr) return null;
         let hex = argbStr.trim().replace('#', '');
@@ -393,11 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `#${hex}`;
     };
 
-    const updateFormStyles = () => {
-        // Subtle color style custom visual updates if needed
-    };
-
-    // --- DOWNLOAD / EXPORT ACTIONS ---
+    // --- CODES AND EXPORTERS ---
     document.getElementById('btn-export-json').addEventListener('click', () => {
         const jsonStr = JSON.stringify(badgeConfig, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -417,14 +410,14 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText(jsonStr).then(() => {
             const btn = document.getElementById('btn-copy-json');
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+            btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
             setTimeout(() => {
                 btn.innerHTML = originalText;
             }, 2000);
         });
     });
 
-    // --- EMBEDDED CONFIG FALLBACKPreserve current state in case relative file fails offline ---
+    // --- EMBEDDED PRESET FALLBACK ---
     const getEmbeddedFallbackConfig = () => {
         return {
           "groups": [
@@ -840,7 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-en",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇬🇧_ENG-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇬🇧",
               "pattern": "(?i)\\benglish\\b|\\beng\\b",
@@ -853,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-es",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇪🇸_SPA-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇪🇸",
               "pattern": "(?i)\\bspanish\\b|\\bspa\\b",
@@ -866,7 +859,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-fr",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇫🇷_FRA-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇫🇷",
               "pattern": "(?i)\\bfrench\\b|\\bfra\\b|\\bfr\\b|\\bvff\\b|\\bvfq\\b",
@@ -879,7 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-de",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇩🇪_DEU-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇩🇪",
               "pattern": "(?i)\\bgerman\\b|\\bdeu\\b",
@@ -892,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-it",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇮🇹_ITA-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇮🇹",
               "pattern": "(?i)\\bitalian\\b|\\bita\\b",
@@ -905,7 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-pt",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇧🇷_POR-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇧🇷",
               "pattern": "(?i)\\bportuguese\\b|\\bpor\\b",
@@ -918,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-ja",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇯🇵_JPN-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇯🇵",
               "pattern": "(?i)\\bjapanese\\b|\\bjpn\\b|[぀-ゟ゠-ヿ]{3,}",
@@ -931,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-ko",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇰🇷_KOR-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇰🇷",
               "pattern": "(?i)\\bkorean\\b|\\bkor\\b|[가-힯]{3,}",
@@ -944,7 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-zh",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇨🇳_CHI-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇨🇳",
               "pattern": "(?i)\\bchinese\\b|\\bchi\\b|[一-鿿]{3,}",
@@ -957,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-hi",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇮🇳_HIN-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇮🇳",
               "pattern": "(?i)\\bhindi\\b|\\bhin\\b|[ऀ-ॿ]{3,}",
@@ -970,7 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-ar",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇸🇦_ARA-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇸🇦",
               "pattern": "(?i)\\barabic\\b|\\bara\\b|[؀-ۿ]{3,}",
@@ -983,7 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-ru",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🇷🇺_RUS-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🇷🇺",
               "pattern": "(?i)\\brussian\\b|\\brus\\b|[Ѐ-ӿ]{3,}",
@@ -996,7 +989,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#00000000",
               "groupId": "gl",
               "id": "l-mu",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🌐_MULTI-2A2A2A.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🌐",
               "pattern": "(?i)\\bmulti\\b|\\bdual[\\s._-]?audio\\b",
@@ -1009,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FF00D2FF",
               "groupId": "gp",
               "id": "p-vidlink",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/⚡_Vidlink-00D2FF.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "⚡ Vidlink",
               "pattern": "(?i)vidlink",
@@ -1022,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FFFF0055",
               "groupId": "gp",
               "id": "p-moviebox",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🎬_MovieBox-FF0055.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🎬 MovieBox",
               "pattern": "(?i)moviebox",
@@ -1035,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FF7F00FF",
               "groupId": "gp",
               "id": "p-netmirror",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/📺_NetMirror-7F00FF.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "📺 NetMirror",
               "pattern": "(?i)netmirror",
@@ -1048,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FFFFD700",
               "groupId": "gp",
               "id": "p-4khdhub",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🚀_4KHDHub-FFD700.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🚀 4KHDHub",
               "pattern": "(?i)4khdhub",
@@ -1061,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FF00FF66",
               "groupId": "gp",
               "id": "p-movix",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🍿_Movix-00FF66.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🍿 Movix",
               "pattern": "(?i)movix",
@@ -1074,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FFFF3300",
               "groupId": "gp",
               "id": "p-notorrent",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🔗_NoTorrent-FF3300.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🔗 NoTorrent",
               "pattern": "(?i)notorrent",
@@ -1087,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FF9933FF",
               "groupId": "gp",
               "id": "p-playimdb",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🎭_PlayImdb-9933FF.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🎭 PlayImdb",
               "pattern": "(?i)playimdb",
@@ -1100,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FF33CCFF",
               "groupId": "gp",
               "id": "p-videasy",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/⭐_Videasy-33CCFF.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "⭐ Videasy",
               "pattern": "(?i)videasy",
@@ -1113,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FFFF9900",
               "groupId": "gp",
               "id": "p-vidfast",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/⚡_VidFastPro-FF9900.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "⚡ VidFastPro",
               "pattern": "(?i)vidfast",
@@ -1126,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FFCC00FF",
               "groupId": "gp",
               "id": "p-xpass",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🔮_Xpass-CC00FF.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🔮 Xpass",
               "pattern": "(?i)xpass",
@@ -1139,7 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FF00E5FF",
               "groupId": "gp",
               "id": "p-autoembed",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/💎_AutoEmbed-00E5FF.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "💎 AutoEmbed",
               "pattern": "(?i)autoembed",
@@ -1152,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "borderColor": "#FFFF0033",
               "groupId": "gp",
               "id": "p-dahmermovies",
-              "imageURL": "https://&scale=3",
+              "imageURL": "https://img.shields.io/badge/🔥_DahmerMovies-FF0033.png?style=flat&scale=3",
               "isEnabled": true,
               "name": "🔥 DahmerMovies",
               "pattern": "(?i)dahmermovies",
@@ -1165,6 +1158,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
-    // --- LAUNCH ---
+    // --- INITIAL START ---
     loadConfig();
 });
