@@ -1,7 +1,7 @@
-// Nuvio Badges Studio Apple-HIG Application Controller
+// Nuvio Badges Studio — Application Controller (Pico.css Framework Edition)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DATABASE STATE ---
+    // --- MAIN STATE ENGINE ---
     let badgeConfig = {
         groups: [],
         filters: []
@@ -17,12 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const simBadgesRow = document.getElementById('n-badges-row');
     const addBadgeForm = document.getElementById('add-badge-form');
     
-    // Apple Segmented Tabs
+    // Segmented Button Tab Switcher
     const segmentBtns = document.querySelectorAll('.segment-btn');
-    const segmentPill = document.getElementById('segment-pill');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    // Dynamic Form Bindings
+    // Form Inputs
     const iconStyleRadio = document.getElementsByName('icon-style');
     const shieldsParams = document.getElementById('shields-params');
     const customUrlParam = document.getElementById('custom-url-param');
@@ -47,17 +46,17 @@ document.addEventListener('DOMContentLoaded', () => {
     bindColorPicker(newBadgeColorPicker, newBadgeColorText);
     bindColorPicker(newBadgeBorderPicker, newBadgeBorderText);
 
-    // --- iOS TAB ACCORDION CONTROLLERS ---
-    segmentBtns.forEach((btn, index) => {
+    // --- TAB SWITCHER CONTROLLER ---
+    segmentBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            segmentBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.add('hidden'));
-            
+            segmentBtns.forEach(b => {
+                b.classList.remove('active');
+                b.className = 'segment-btn outline secondary'; // reset to standard inactive Pico style
+            });
+            btn.className = 'segment-btn'; // make active solid style
             btn.classList.add('active');
             
-            // Translate sliding pill selector
-            segmentPill.style.transform = `translateX(${index * 100}%)`;
-            
+            tabContents.forEach(c => c.classList.add('hidden'));
             document.getElementById(btn.getAttribute('data-tab')).classList.remove('hidden');
         });
     });
@@ -75,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- FETCH DATA CONTROLLER ---
+    // --- CONFIG LOAD CONTROLLER ---
     const loadConfig = async () => {
         try {
             const response = await fetch('./badges.json');
@@ -83,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 badgeConfig = await response.json();
                 console.log('✅ Loaded badges.json dynamically');
             } else {
-                throw new Error('Local fetch blocked');
+                throw new Error('Local load blocked');
             }
         } catch (e) {
             console.log('⚠️ Fetch failed. Falling back to embedded configuration data.');
@@ -99,44 +98,39 @@ document.addEventListener('DOMContentLoaded', () => {
         runLiveMatchTester();
     };
 
-    // --- RENDER SIDEBAR CONFIGURATOR ---
+    // --- RENDER CONFIGURATOR SIDEBAR ---
     const renderAccordion = () => {
         groupsContainer.innerHTML = '';
         
         if (!badgeConfig.groups || badgeConfig.groups.length === 0) {
-            groupsContainer.innerHTML = '<div class="loading-state">No configuration metadata.</div>';
+            groupsContainer.innerHTML = '<div class="loading-state">No configuration metadata available.</div>';
             return;
         }
 
         badgeConfig.groups.forEach((group) => {
-            const accordionItem = document.createElement('div');
-            accordionItem.className = `accordion-item ${group.isExpanded ? 'open' : ''}`;
-            accordionItem.id = `group-item-${group.id}`;
-
-            const header = document.createElement('div');
-            header.className = 'accordion-header';
-            header.innerHTML = `
-                <div class="accordion-title">
-                    <span class="accordion-indicator-dot" style="background-color: ${group.color || '#FFFFFF'}"></span>
-                    <span>${group.name}</span>
-                </div>
-                <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            // Built using standard HTML5 <details> & <summary> tags modeled by Pico.css natively
+            const details = document.createElement('details');
+            if (group.isExpanded) details.setAttribute('open', '');
+            
+            const summary = document.createElement('summary');
+            summary.innerHTML = `
+                <span class="accordion-indicator-dot" style="background-color: ${group.color || '#FFFFFF'}"></span>
+                <strong>${group.name}</strong>
             `;
 
-            header.addEventListener('click', () => {
-                const isOpen = accordionItem.classList.contains('open');
-                accordionItem.classList.toggle('open');
-                group.isExpanded = !isOpen;
+            // Listen to browser-native fold state toggle events
+            details.addEventListener('toggle', () => {
+                group.isExpanded = details.open;
                 updateJSONViewer();
             });
 
             const body = document.createElement('div');
-            body.className = 'accordion-body';
+            body.style.paddingTop = '0.5rem';
 
             const filtersInGroup = badgeConfig.filters.filter(f => f.groupId === group.id);
             
             if (filtersInGroup.length === 0) {
-                body.innerHTML = '<p class="loading-state">No filters active.</p>';
+                body.innerHTML = '<p class="loading-state">No filters active in this group.</p>';
             } else {
                 const listContainer = document.createElement('div');
                 listContainer.className = 'badge-list-container';
@@ -160,18 +154,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${previewUrl ? `<img class="badge-preview-img" src="${previewUrl}" alt="${filter.name}">` : `<span class="badge-preview-chip" style="background-color: ${parseARGBtoRGBA(filter.tagColor) || 'transparent'}; border: 1px solid ${parseARGBtoRGBA(filter.borderColor) || 'transparent'}; color: ${parseARGBtoRGBA(filter.textColor) || '#FFFFFF'}">${filter.name}</span>`}
                         </div>
                         <button class="badge-action-btn" data-id="${filter.id}">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     `;
 
-                    // Checkbox binding
+                    // Checkbox toggle
                     item.querySelector('.badge-checkbox').addEventListener('change', (e) => {
                         filter.isEnabled = e.target.checked;
                         updateJSONViewer();
                         runLiveMatchTester();
                     });
 
-                    // Delete binding
+                    // Delete button
                     item.querySelector('.badge-action-btn').addEventListener('click', () => {
                         badgeConfig.filters = badgeConfig.filters.filter(f => f.id !== filter.id);
                         renderAccordion();
@@ -184,12 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 body.appendChild(listContainer);
             }
 
-            accordionItem.appendChild(header);
-            accordionItem.appendChild(body);
-            groupsContainer.appendChild(accordionItem);
+            details.appendChild(summary);
+            details.appendChild(body);
+            groupsContainer.appendChild(details);
         });
 
-        // Update display count
+        // Update counts
         const activeCount = badgeConfig.filters.filter(f => f.isEnabled).length;
         badgeCountText.textContent = `${activeCount} / ${badgeConfig.filters.length} Enabled`;
     };
@@ -200,24 +194,22 @@ document.addEventListener('DOMContentLoaded', () => {
         jsonCodeBlock.textContent = cleanJSON;
     };
 
-    // --- PREMIUM SIMULATOR MATCHING ENGINE ---
+    // --- STREAM PREVIEW MATCHING SIMULATOR ---
     const runLiveMatchTester = () => {
         const streamStr = testerInput.value.trim();
         if (!streamStr) {
-            simTitle.textContent = "No stream data";
-            simDesc.textContent = "";
+            simTitle.textContent = "Untitled Stream";
+            simDesc.textContent = "No data";
             simBadgesRow.innerHTML = '';
             return;
         }
 
-        // Exact QuickJS parse replication (Splits into name and title components)
         const parts = streamStr.split('|').map(s => s.trim());
-        const mockName = parts[0] || 'Source Scraper';
+        const mockName = parts[0] || 'Scraper';
         const mockTitle = parts.slice(1).join(' | ');
 
         simTitle.textContent = mockTitle ? `${mockName} | ${mockTitle}` : mockName;
 
-        // Extract and construct simulated description subtitle candidate
         let size = '1.45 GB';
         let quality = '1080p';
         let language = 'Multi';
@@ -236,7 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const mockDesc = `${quality} • ${size} • ${language}`;
         simDesc.textContent = mockDesc;
 
-        // Clear and evaluate badge candidate rows (matching StreamItem.name + StreamItem.description)
         simBadgesRow.innerHTML = '';
         const activeFilters = badgeConfig.filters.filter(f => f.isEnabled);
 
@@ -252,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const regex = new RegExp(cleanedPattern, flags);
                 
-                // Matches against StreamItem name candidate OR StreamItem description candidate
                 const isNameMatch = regex.test(mockName);
                 const isDescMatch = regex.test(mockDesc) || regex.test(mockTitle);
                 
@@ -265,12 +255,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const webTextColor = parseARGBtoRGBA(filter.textColor) || '#FFFFFF';
 
                     if (filter.tagStyle === 'filled') {
-                        chip.style.backgroundColor = webBgColor || 'rgba(255,255,255,0.06)';
+                        chip.style.backgroundColor = webBgColor || 'var(--pico-card-background-color)';
                     } else if (filter.tagStyle === 'outlined') {
-                        chip.style.border = `1px solid ${webBorderColor || '#FFFFFF'}`;
+                        chip.style.border = `1px solid ${webBorderColor || 'var(--pico-border-color)'}`;
                     } else if (filter.tagStyle === 'filled and bordered') {
-                        chip.style.backgroundColor = webBgColor || 'rgba(255,255,255,0.04)';
-                        chip.style.border = `1px solid ${webBorderColor || 'rgba(255,255,255,0.1)'}`;
+                        chip.style.backgroundColor = webBgColor || 'var(--pico-card-background-color)';
+                        chip.style.border = `1px solid ${webBorderColor || 'var(--pico-border-color)'}`;
                     }
                     
                     chip.style.color = webTextColor;
@@ -291,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     simBadgesRow.appendChild(chip);
                 }
             } catch (err) {
-                console.error(`Invalid matching rule for ${filter.name}:`, err);
+                console.error(`Invalid matcher rule for ${filter.name}:`, err);
             }
         });
     };
@@ -354,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateJSONViewer();
         runLiveMatchTester();
 
-        // Reset forms & switch tab back
+        // Reset forms
         addBadgeForm.reset();
         newBadgeColorText.value = '#00D2FF';
         newBadgeColorPicker.value = '#00D2FF';
@@ -364,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('[data-tab="tab-edit"]').click();
     });
 
-    // --- UTILITIES AND CONVERTERS ---
+    // --- CODES AND PARSERS ---
     const parseARGBtoRGBA = (argbStr) => {
         if (!argbStr) return null;
         let hex = argbStr.trim().replace('#', '');
@@ -417,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- EMBEDDED PRESET FALLBACK ---
+    // --- EMBEDDED CONFIG FALLBACK ---
     const getEmbeddedFallbackConfig = () => {
         return {
           "groups": [
@@ -745,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
               "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/dts.png",
               "isEnabled": true,
               "name": "DTS",
-              "pattern": "(?i)^(?=.*\\bDTS\\b)(?!.*\\bdts[-_. ]?(?:hd|ma|xll|x)\\b)",
+              "pattern": "(?i)^(?=.*\\bDTS\\b)(?!.*\\bdts[-_. ]?(?:hd|ma|xll|x))",
               "tagColor": "#FFFFFF",
               "tagStyle": "filled",
               "textColor": "#0e0e0e",

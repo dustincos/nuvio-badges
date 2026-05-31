@@ -1,663 +1,98 @@
-/* Nuvio Badges Studio Apple-HIG Theme Stylesheet */
+/* Nuvio Badges Studio — Custom Styling & Framework Overrides */
 
-/* --- SYSTEM CONSTANTS & TOKENS --- */
-:root {
-    --apple-black: #000000;
-    --apple-system-dark: #0a0a0c;
-    
-    /* macOS Translucent Material (Dark) */
-    --apple-material-bg: rgba(28, 28, 30, 0.7);
-    --apple-material-bg-hover: rgba(44, 44, 46, 0.8);
-    --apple-border: rgba(255, 255, 255, 0.08);
-    --apple-border-focus: #007AFF; /* System Blue */
-    
-    /* System Typography Colors */
-    --label-primary: #FFFFFF;
-    --label-secondary: #8E8E93;
-    --label-tertiary: #48484A;
-    
-    /* Accent Systems */
-    --system-blue: #007AFF;
-    --system-green: #30D158;
-    --system-red: #FF453A;
-    --system-amber: #FF9F0A;
-    
-    /* Squircle Radii */
-    --radius-squircle: 12px;
-    --radius-pill: 30px;
-    
-    --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, system-ui, sans-serif;
-    --font-monospace: "SF Mono", "Fira Code", Monaco, Consolas, monospace;
-    
-    --apple-ease: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* --- BASE STYLES --- */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-    background-color: var(--apple-black);
-    color: var(--label-primary);
-    font-family: var(--font-system);
-    min-height: 100vh;
-    overflow-x: hidden;
-    line-height: 1.4;
-}
-
-/* --- MAIN CONTAINER --- */
-.app-wrap {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 2.5rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    min-height: 100vh;
-}
-
-/* --- HEADER --- */
-.app-header {
-    border-bottom: 1px solid var(--apple-border);
-    padding-bottom: 1.5rem;
-}
-
-.header-inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.logo {
-    font-size: 2rem;
-}
-
-.app-header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--label-primary);
-}
-
-.tagline {
-    font-size: 0.85rem;
-    color: var(--label-secondary);
-    font-weight: 400;
-    margin-top: 0.15rem;
-}
-
-/* --- DUAL PANEL GRID --- */
-.app-grid {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 2rem;
-    align-items: start;
-    flex-grow: 1;
-}
-
-@media (max-width: 1024px) {
-    .app-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* --- APPLE SQUIRCLE CARDS --- */
-.card {
-    background: var(--apple-material-bg);
-    border: 1px solid var(--apple-border);
-    border-radius: var(--radius-squircle);
-    backdrop-filter: blur(20px) saturate(190%);
-    -webkit-backdrop-filter: blur(20px) saturate(190%);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.panel-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--apple-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.panel-header h2 {
-    font-size: 1.05rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--label-primary);
-}
-
-.pill-stat {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--system-green);
-    background: rgba(48, 209, 88, 0.15);
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-    border: 1px solid rgba(48, 209, 88, 0.2);
-}
-
-/* --- BUTTONS --- */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    padding: 0.6rem 1.15rem;
-    border-radius: 8px;
-    font-family: var(--font-system);
-    font-weight: 550;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: var(--apple-ease);
-    border: none;
-}
-
-.btn-primary {
-    background-color: var(--system-blue);
-    color: #FFFFFF;
-}
-
-.btn-primary:hover {
-    background-color: #0062cc;
-    transform: translateY(-0.5px);
-}
-
-.btn-secondary {
-    background-color: rgba(255, 255, 255, 0.04);
-    color: var(--label-primary);
-    border: 1px solid var(--apple-border);
-}
-
-.btn-secondary:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
-.btn-full {
-    width: 100%;
-    margin-top: 0.5rem;
-}
-
-.actions {
-    display: flex;
-    gap: 0.75rem;
-}
-
-/* --- NATIVE APPLE SEGMENTED CONTROLS --- */
-.segmented-control {
-    background-color: rgba(120, 120, 128, 0.12);
-    border-radius: 8px;
-    padding: 2px;
-    margin: 1.25rem 1.5rem 0 1.5rem;
-    display: flex;
-    position: relative;
-    user-select: none;
-}
-
-.segment-pill {
-    position: absolute;
-    top: 2px;
-    bottom: 2px;
-    left: 2px;
-    width: calc(50% - 2px);
-    background-color: rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-    pointer-events: none;
-}
-
-.segment-btn {
-    flex: 1;
-    background: none;
-    border: none;
-    padding: 0.5rem;
-    color: var(--label-secondary);
-    font-family: var(--font-system);
-    font-weight: 550;
-    font-size: 0.85rem;
-    cursor: pointer;
-    z-index: 1;
-    transition: var(--apple-ease);
-}
-
-.segment-btn.active {
-    color: var(--label-primary);
-}
-
-.tab-content {
-    padding: 1.25rem 1.5rem;
-    overflow-y: auto;
-    max-height: 680px;
-}
-
+/* --- LAYOUT AND ACCORDION DETAILS --- */
 .tab-content.hidden {
     display: none !important;
 }
 
-/* --- COLLAPSIBLE SYSTEM SIDEBAR ACCORDION --- */
-.accordion-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.accordion-item {
-    border-bottom: 1px solid var(--apple-border);
-}
-
-.accordion-item:last-child {
-    border-bottom: none;
-}
-
-.accordion-header {
-    padding: 1.1rem 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-}
-
-.accordion-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-weight: 550;
-    font-size: 0.95rem;
-    color: var(--label-primary);
-}
-
+/* Accordion Group Indicators */
 .accordion-indicator-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+    vertical-align: middle;
 }
 
-.accordion-chevron {
-    transition: transform 0.25s ease;
-    color: var(--label-tertiary);
-}
-
-.accordion-item.open .accordion-chevron {
-    transform: rotate(90deg);
-}
-
-.accordion-body {
-    padding-bottom: 1rem;
-    display: none;
-}
-
-.accordion-item.open .accordion-body {
-    display: block;
-}
-
-/* --- BADGE LIST ROWS --- */
-.badge-list-container {
-    display: flex;
-    flex-direction: column;
-}
-
+/* Dynamic list inside Pico details accordions */
 .badge-list-item {
     display: grid;
     grid-template-columns: auto 1fr auto auto;
     align-items: center;
     gap: 1rem;
-    padding: 0.75rem 0.5rem;
-    border-radius: 6px;
-    transition: var(--apple-ease);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--pico-border-color);
 }
 
-.badge-list-item:hover {
-    background-color: rgba(255, 255, 255, 0.02);
-}
-
-/* Apple Native Style Checkbox */
-.badge-checkbox {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border: 1.5px solid var(--label-secondary);
-    border-radius: 50%;
-    cursor: pointer;
-    position: relative;
-    transition: var(--apple-ease);
-}
-
-.badge-checkbox:checked {
-    background-color: var(--system-blue);
-    border-color: var(--system-blue);
-}
-
-.badge-checkbox:checked::after {
-    content: '';
-    position: absolute;
-    width: 8px;
-    height: 5px;
-    border-left: 2px solid #FFFFFF;
-    border-bottom: 2px solid #FFFFFF;
-    transform: rotate(-45deg) translate(-50%, -50%);
-    top: 30%;
-    left: 20%;
+.badge-list-item:last-child {
+    border-bottom: none;
 }
 
 .badge-info {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
 }
 
 .badge-label-text {
     font-weight: 550;
-    font-size: 0.9rem;
-    color: var(--label-primary);
+    font-size: 0.85rem;
 }
 
 .badge-pattern-text {
-    font-family: var(--font-monospace);
+    font-family: var(--pico-font-family-monospace);
     font-size: 0.7rem;
-    color: var(--label-secondary);
-}
-
-.badge-preview-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: var(--pico-muted-color);
 }
 
 .badge-preview-img {
     height: 16px;
     max-width: 90px;
     object-fit: contain;
+    display: block;
 }
 
 .badge-preview-chip {
     font-size: 9px;
     font-weight: 700;
     padding: 1px 5px;
-    border-radius: 4px;
     text-transform: uppercase;
 }
 
 .badge-action-btn {
     background: none;
     border: none;
-    color: var(--label-tertiary);
+    color: var(--pico-muted-color);
     cursor: pointer;
-    transition: var(--apple-ease);
     padding: 0.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    transition: color 0.15s ease;
 }
 
 .badge-action-btn:hover {
-    color: var(--system-red);
-    background-color: rgba(255, 69, 58, 0.1);
+    color: var(--pico-form-element-invalid-active-border-color);
 }
 
-/* --- SYSTEM FORMS & INPUTS --- */
-.apple-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-@media (max-width: 640px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-.form-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.form-item label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--label-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.form-item input[type="text"],
-.form-item input[type="url"],
-.form-item select {
-    background-color: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--apple-border);
-    padding: 0.65rem 0.85rem;
-    border-radius: 8px;
-    color: var(--label-primary);
-    font-family: var(--font-system);
-    font-size: 0.9rem;
-    transition: var(--apple-ease);
-}
-
-.form-item input:focus,
-.form-item select:focus {
-    outline: none;
-    border-color: var(--apple-border-focus);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
-}
-
-.field-hint {
-    font-size: 0.72rem;
-    color: var(--label-secondary);
-    line-height: 1.3;
-}
-
-.form-sub-section {
-    background-color: rgba(255, 255, 255, 0.01);
-    border: 1px dashed var(--apple-border);
-    border-radius: 8px;
-    padding: 0.85rem;
-}
-
-.form-sub-section.hidden {
-    display: none !important;
-}
-
-/* --- COLOR PICKERS --- */
-.color-picker-wrapper {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.color-picker-wrapper input[type="color"] {
-    appearance: none;
-    -webkit-appearance: none;
-    border: none;
-    width: 38px;
-    height: 38px;
-    border-radius: 6px;
+/* Custom Styled Checkboxes */
+.badge-checkbox {
     cursor: pointer;
-    background: none;
 }
 
-.color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.color-picker-wrapper input[type="color"]::-webkit-color-swatch {
-    border: 1px solid var(--apple-border);
-    border-radius: 6px;
-}
-
-.color-picker-wrapper input[type="text"] {
-    flex-grow: 1;
-}
-
-/* --- APPLE PILL TOGGLE GROUP --- */
-.apple-toggle-group {
-    display: flex;
-    gap: 0.5rem;
-    background-color: rgba(120, 120, 128, 0.08);
-    border-radius: 8px;
-    padding: 2px;
-}
-
-.toggle-option {
-    flex: 1;
-    cursor: pointer;
-    text-align: center;
-}
-
-.toggle-option input[type="radio"] {
-    appearance: none;
-    display: none;
-}
-
-.toggle-pill {
-    display: block;
-    padding: 0.45rem;
-    font-size: 0.78rem;
-    font-weight: 550;
-    color: var(--label-secondary);
-    border-radius: 6px;
-    transition: var(--apple-ease);
-}
-
-.toggle-option input[type="radio"]:checked + .toggle-pill {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: var(--label-primary);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-/* --- SANDBOX & PREVIEW LAYOUT --- */
-.panel-sandbox {
+/* --- MOCK SIMULATED STREAM CARD WIDGET --- */
+.sim-stream-card {
+    background-color: var(--pico-card-background-color);
+    border: 1px solid var(--pico-card-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 1rem;
+    margin-top: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 0.75rem;
 }
 
-/* --- LIVE SANDBOX PREVIEW --- */
-.preview-card {
-    background: var(--apple-material-bg);
-}
-
-.tester-wrapper {
-    padding: 0.5rem 1.5rem 0 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.field-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--label-secondary);
-}
-
-.tester-input-field {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.tester-input-field input {
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--apple-border);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    color: var(--label-primary);
-    font-size: 0.95rem;
-    font-weight: 500;
-    font-family: var(--font-system);
-    transition: var(--apple-ease);
-}
-
-.tester-input-field input:focus {
-    outline: none;
-    border-color: var(--apple-border-focus);
-    background-color: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
-}
-
-.pulse-indicator {
-    position: absolute;
-    right: 12px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--system-green);
-    box-shadow: 0 0 8px var(--system-green);
-    animation: beacon 2s infinite ease-in-out;
-}
-
-/* --- SIMULATED APPLE STREAM LIST CARD WIDGET --- */
-.stream-simulation-widget {
-    padding: 1.5rem;
-    display: flex;
-    justify-content: center;
-}
-
-.stream-card-content {
-    background-color: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 12px;
-    padding: 1.1rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    max-width: 420px;
-    width: 100%;
-    transition: var(--apple-ease);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.stream-card-content:hover {
-    border-color: rgba(255, 255, 255, 0.08);
-    background-color: rgba(255, 255, 255, 0.03);
-}
-
-.stream-card-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.stream-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--label-primary);
-    letter-spacing: -0.01em;
-    line-height: 1.35;
-}
-
-.stream-desc {
-    font-size: 0.8rem;
-    color: var(--label-secondary);
-    font-weight: 400;
-}
-
-/* Badge FLEX Pill Row */
-.badges-flex-container {
+.badges-row {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
@@ -665,79 +100,46 @@ body {
     align-items: center;
 }
 
-/* Jetpack Compose stream badge simulation (Preview height: 20px) */
+/* Jetpack Compose dynamic badges (Preview height: 20px) */
 .n-badge-chip {
-    height: 20px; /* Stream height: 20dp */
-    border-radius: 6px;
+    height: 20px;
     padding: 2px 5px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    transition: var(--apple-ease);
     overflow: hidden;
+    border-radius: calc(var(--pico-border-radius) / 2); /* Kept aligned with Pico border radius variables */
 }
 
 .n-badge-chip img {
-    height: 16px; /* Stream image height: 16dp */
-    max-width: 92px; /* Stream max width: 92dp */
+    height: 16px;
+    max-width: 92px;
     object-fit: contain;
     display: block;
 }
 
-/* --- JSON CODE INSPECTOR FRAME --- */
-.code-card {
-    background: var(--apple-material-bg);
-}
-
-.code-editor-viewport {
-    background-color: var(--apple-system-dark);
-    border: 1px solid var(--apple-border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0 1.5rem 1.5rem 1.5rem;
+/* --- CODE INSPECTOR PANEL --- */
+.code-viewport {
     max-height: 320px;
     overflow-y: auto;
+    border-radius: var(--pico-border-radius);
 }
 
-.editor-block {
-    font-family: var(--font-monospace);
-    font-size: 0.78rem;
-    color: #30D158; /* Premium system green console theme */
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-all;
+.code-viewport pre {
+    margin: 0;
+    padding: 1rem;
 }
 
-/* Scrollbar styles */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-/* --- SYSTEM ANIMATIONS --- */
-@keyframes beacon {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.1); }
+.code-viewport code {
+    font-size: 0.75rem;
+    line-height: 1.4;
 }
 
 .loading-state {
     text-align: center;
-    color: var(--label-secondary);
-    padding: 3rem 0;
+    color: var(--pico-muted-color);
+    padding: 2rem 0;
     font-style: italic;
     font-size: 0.85rem;
 }
