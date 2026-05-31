@@ -1,13 +1,9 @@
-// Nuvio Badges Studio — Application Controller (Pico.css Framework Edition)
-
 document.addEventListener('DOMContentLoaded', () => {
-    // --- MAIN STATE ENGINE ---
     let badgeConfig = {
         groups: [],
         filters: []
     };
 
-    // --- DOM ELEMENT SELECTIONS ---
     const groupsContainer = document.getElementById('groups-accordion-container');
     const badgeCountText = document.getElementById('badge-count-badge');
     const jsonCodeBlock = document.getElementById('json-code-block');
@@ -17,11 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const simBadgesRow = document.getElementById('n-badges-row');
     const addBadgeForm = document.getElementById('add-badge-form');
     
-    // Segmented Button Tab Switcher
     const segmentBtns = document.querySelectorAll('.segment-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    // Form Inputs
     const iconStyleRadio = document.getElementsByName('icon-style');
     const shieldsParams = document.getElementById('shields-params');
     const customUrlParam = document.getElementById('custom-url-param');
@@ -30,7 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const newBadgeBorderPicker = document.getElementById('new-badge-border-picker');
     const newBadgeBorderText = document.getElementById('new-badge-border-text');
 
-    // --- COLOR WRAPPER BINDINGS ---
+    const getScaledImageURL = (url) => {
+        if (!url || !url.includes('shields.io')) return url;
+        if (url.includes('scale=')) {
+            return url.replace(/scale=\d+/, 'scale=3');
+        }
+        return url + (url.includes('?') ? '&scale=3' : '?scale=3');
+    };
+
     const bindColorPicker = (picker, textInput) => {
         picker.addEventListener('input', (e) => {
             textInput.value = e.target.value.toUpperCase();
@@ -46,22 +47,20 @@ document.addEventListener('DOMContentLoaded', () => {
     bindColorPicker(newBadgeColorPicker, newBadgeColorText);
     bindColorPicker(newBadgeBorderPicker, newBadgeBorderText);
 
-    // --- TAB SWITCHER CONTROLLER ---
     segmentBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             segmentBtns.forEach(b => {
                 b.classList.remove('active');
-                b.className = 'segment-btn outline secondary'; // reset to standard inactive Pico style
+                b.classList.add('outline', 'secondary');
             });
-            btn.className = 'segment-btn'; // make active solid style
             btn.classList.add('active');
+            btn.classList.remove('outline', 'secondary');
             
             tabContents.forEach(c => c.classList.add('hidden'));
             document.getElementById(btn.getAttribute('data-tab')).classList.remove('hidden');
         });
     });
 
-    // Toggle Icon parameters
     iconStyleRadio.forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.value === 'shields') {
@@ -74,31 +73,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- CONFIG LOAD CONTROLLER ---
     const loadConfig = async () => {
         try {
             const response = await fetch('./badges.json');
             if (response.ok) {
                 badgeConfig = await response.json();
-                console.log('✅ Loaded badges.json dynamically');
             } else {
                 throw new Error('Local load blocked');
             }
         } catch (e) {
-            console.log('⚠️ Fetch failed. Falling back to embedded configuration data.');
             badgeConfig = getEmbeddedFallbackConfig();
         }
         initApp();
     };
 
-    // --- INITIALIZE APPLICATION ---
     const initApp = () => {
         renderAccordion();
         updateJSONViewer();
         runLiveMatchTester();
     };
 
-    // --- RENDER CONFIGURATOR SIDEBAR ---
     const renderAccordion = () => {
         groupsContainer.innerHTML = '';
         
@@ -108,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         badgeConfig.groups.forEach((group) => {
-            // Built using standard HTML5 <details> & <summary> tags modeled by Pico.css natively
             const details = document.createElement('details');
             if (group.isExpanded) details.setAttribute('open', '');
             
@@ -118,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <strong>${group.name}</strong>
             `;
 
-            // Listen to browser-native fold state toggle events
             details.addEventListener('toggle', () => {
                 group.isExpanded = details.open;
                 updateJSONViewer();
@@ -139,10 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const item = document.createElement('div');
                     item.className = 'badge-list-item';
                     
-                    let previewUrl = filter.imageURL;
-                    if (previewUrl && previewUrl.includes('shields.io') && !previewUrl.includes('scale=')) {
-                        previewUrl += previewUrl.includes('?') ? '&scale=2' : '?scale=2';
-                    }
+                    const previewUrl = getScaledImageURL(filter.imageURL);
 
                     item.innerHTML = `
                         <input type="checkbox" class="badge-checkbox" data-id="${filter.id}" ${filter.isEnabled ? 'checked' : ''}>
@@ -158,14 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         </button>
                     `;
 
-                    // Checkbox toggle
                     item.querySelector('.badge-checkbox').addEventListener('change', (e) => {
                         filter.isEnabled = e.target.checked;
                         updateJSONViewer();
                         runLiveMatchTester();
                     });
 
-                    // Delete button
                     item.querySelector('.badge-action-btn').addEventListener('click', () => {
                         badgeConfig.filters = badgeConfig.filters.filter(f => f.id !== filter.id);
                         renderAccordion();
@@ -183,18 +170,14 @@ document.addEventListener('DOMContentLoaded', () => {
             groupsContainer.appendChild(details);
         });
 
-        // Update counts
         const activeCount = badgeConfig.filters.filter(f => f.isEnabled).length;
         badgeCountText.textContent = `${activeCount} / ${badgeConfig.filters.length} Enabled`;
     };
 
-    // --- JSON VIEWER CONTROLLER ---
     const updateJSONViewer = () => {
-        const cleanJSON = JSON.stringify(badgeConfig, null, 2);
-        jsonCodeBlock.textContent = cleanJSON;
+        jsonCodeBlock.textContent = JSON.stringify(badgeConfig, null, 2);
     };
 
-    // --- STREAM PREVIEW MATCHING SIMULATOR ---
     const runLiveMatchTester = () => {
         const streamStr = testerInput.value.trim();
         if (!streamStr) {
@@ -234,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeFilters.forEach(filter => {
             try {
                 let cleanedPattern = filter.pattern;
-                let flags = 'g';
+                let flags = '';
                 
                 if (cleanedPattern.startsWith('(?i)')) {
                     flags += 'i';
@@ -242,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const regex = new RegExp(cleanedPattern, flags);
-                
                 const isNameMatch = regex.test(mockName);
                 const isDescMatch = regex.test(mockDesc) || regex.test(mockTitle);
                 
@@ -265,10 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     chip.style.color = webTextColor;
 
-                    let finalImageURL = filter.imageURL;
-                    if (finalImageURL && finalImageURL.includes('shields.io')) {
-                        finalImageURL += finalImageURL.includes('?') ? '&scale=2' : '?scale=2';
-                    }
+                    const finalImageURL = getScaledImageURL(filter.imageURL);
 
                     if (finalImageURL) {
                         chip.innerHTML = `<img src="${finalImageURL}" alt="${filter.name}">`;
@@ -288,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     testerInput.addEventListener('input', runLiveMatchTester);
 
-    // --- FORM HANDLER (ADD BADGE) ---
     addBadgeForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -344,7 +322,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateJSONViewer();
         runLiveMatchTester();
 
-        // Reset forms
         addBadgeForm.reset();
         newBadgeColorText.value = '#00D2FF';
         newBadgeColorPicker.value = '#00D2FF';
@@ -354,7 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('[data-tab="tab-edit"]').click();
     });
 
-    // --- CODES AND PARSERS ---
     const parseARGBtoRGBA = (argbStr) => {
         if (!argbStr) return null;
         let hex = argbStr.trim().replace('#', '');
@@ -380,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `#${hex}`;
     };
 
-    // --- CODES AND EXPORTERS ---
     document.getElementById('btn-export-json').addEventListener('click', () => {
         const jsonStr = JSON.stringify(badgeConfig, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -407,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- EMBEDDED CONFIG FALLBACK ---
     const getEmbeddedFallbackConfig = () => {
         return {
           "groups": [
@@ -1148,6 +1122,5 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
-    // --- INITIAL START ---
     loadConfig();
 });

@@ -1,11 +1,7 @@
-/* Nuvio Badges Studio — Custom Styling & Framework Overrides */
-
-/* --- LAYOUT AND ACCORDION DETAILS --- */
 .tab-content.hidden {
     display: none !important;
 }
 
-/* Accordion Group Indicators */
 .accordion-indicator-dot {
     width: 6px;
     height: 6px;
@@ -15,7 +11,6 @@
     vertical-align: middle;
 }
 
-/* Dynamic list inside Pico details accordions */
 .badge-list-item {
     display: grid;
     grid-template-columns: auto 1fr auto auto;
@@ -75,12 +70,10 @@
     color: var(--pico-form-element-invalid-active-border-color);
 }
 
-/* Custom Styled Checkboxes */
 .badge-checkbox {
     cursor: pointer;
 }
 
-/* --- MOCK SIMULATED STREAM CARD WIDGET --- */
 .sim-stream-card {
     background-color: var(--pico-card-background-color);
     border: 1px solid var(--pico-card-border-color);
@@ -100,7 +93,6 @@
     align-items: center;
 }
 
-/* Jetpack Compose dynamic badges (Preview height: 20px) */
 .n-badge-chip {
     height: 20px;
     padding: 2px 5px;
@@ -109,7 +101,7 @@
     justify-content: center;
     border: 1px solid transparent;
     overflow: hidden;
-    border-radius: calc(var(--pico-border-radius) / 2); /* Kept aligned with Pico border radius variables */
+    border-radius: calc(var(--pico-border-radius) / 2);
 }
 
 .n-badge-chip img {
@@ -119,7 +111,6 @@
     display: block;
 }
 
-/* --- CODE INSPECTOR PANEL --- */
 .code-viewport {
     max-height: 320px;
     overflow-y: auto;
