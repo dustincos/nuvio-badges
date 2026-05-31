@@ -1,16 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
+    let presetConfig = {
+        icon: 'colored',
+        qual: 'bgb',
+        dv: 'combo',
+        hdr: 'nodv',
+        desc: 'short'
+    };
+
     let badgeConfig = {
         groups: [],
         filters: []
     };
 
+    // DOM Element Selections
     const groupsContainer = document.getElementById('groups-accordion-container');
     const badgeCountText = document.getElementById('badge-count-badge');
     const jsonCodeBlock = document.getElementById('json-code-block');
     const testerInput = document.getElementById('test-stream-title');
-    const simTitle = document.getElementById('n-stream-title');
-    const simDesc = document.getElementById('n-stream-desc');
-    const simBadgesRow = document.getElementById('n-badges-row');
+    const previewListContainer = document.getElementById('dynamic-preview-list');
     const addBadgeForm = document.getElementById('add-badge-form');
     
     const segmentBtns = document.querySelectorAll('.segment-btn');
@@ -23,6 +30,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const newBadgeColorText = document.getElementById('new-badge-color-text');
     const newBadgeBorderPicker = document.getElementById('new-badge-border-picker');
     const newBadgeBorderText = document.getElementById('new-badge-border-text');
+
+    const imageBaseURL = 'https://raw.githubusercontent.com/dustincos/nuvio-badges/main/images/';
+
+    const ST = {
+        best: { bc: '#FF00FF37', bg: '#E600E932', tc: '#27C04F' },
+        good: { bc: '#FF2D9943', bg: '#3300E932', tc: '#27C04F' },
+        bad: { bc: '#FF9D613D', bg: '#33FF7728', tc: '#FF6904' },
+        res: { bc: '#FF858283', bg: '#33FFFFFF', tc: '#FFFFFF' },
+        tr: { bc: '#00000000', bg: '#00000000', tc: '#FFFFFF' },
+        dim: { bc: '#00000000', bg: '#00000000', tc: '#80FFFFFF' },
+    };
+
+    const STREAMS = [
+        { qual: 'Bluray Remux', title: 'Avatar Fire and Ash (2025)', size: '76 GB', fn: 'Avatar.Fire.and.Ash.2025.2160p.BluRay.REMUX.IMAX.DV.TrueHD.7.1.Atmos-FraMeSToR.mkv', pct: 99, res: '4K', hdr: null, dv: true, aud: 'atmos', ch: '7.1', src: 'remux', q: 'best', tier: 't1', imax: 'IMAX', seadex: false },
+        { qual: 'Bluray', title: 'Avatar Fire and Ash (2025)', size: '18 GB', fn: 'Avatar.Fire.and.Ash.2025.2160p.BluRay.x265.HDR10.DTS-X.7.1-CtrlHD.mkv', pct: 90, res: '4K', hdr: 'HDR10', dv: false, aud: 'dtsx', ch: '7.1', src: 'bluray', q: 'good', tier: 't1', imax: null, seadex: false },
+        { qual: 'Bluray', title: 'Demon Slayer S01·E01', size: '4 GB', fn: 'Demon.Slayer.2019.1080p.BluRay.DV.DDP5.1.Atmos-hallowed.mkv', pct: 80, res: '1080p', hdr: null, dv: true, aud: 'atmos', ch: '5.1', src: 'bluray', q: 'good', tier: 't2', imax: null, seadex: true },
+        { qual: 'Web-Dl', title: 'Avatar Fire and Ash (2025)', size: '2 GB', fn: 'Avatar.Fire.and.Ash.2025.720p.WEB-DL.DD5.1.DV-RandomGrp.mkv', pct: 50, res: '720p', hdr: null, dv: true, aud: 'dd', ch: '5.1', src: 'webdl', q: 'ok', tier: 't3', imax: null, seadex: false }
+    ];
 
     const getScaledImageURL = (url) => {
         if (!url || !url.includes('shields.io')) return url;
@@ -73,24 +98,262 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const loadConfig = async () => {
-        try {
-            const response = await fetch('./badges.json');
-            if (response.ok) {
-                badgeConfig = await response.json();
-            } else {
-                throw new Error('Local load blocked');
+    // Preset Pill Option Selection
+    document.querySelectorAll('.preset-opts').forEach(groupContainer => {
+        groupContainer.querySelectorAll('.preset-opt').forEach(opt => {
+            opt.addEventListener('click', () => {
+                groupContainer.querySelectorAll('.preset-opt').forEach(sibling => {
+                    sibling.classList.remove('active');
+                });
+                opt.classList.add('active');
+                
+                const group = groupContainer.getAttribute('data-group');
+                const value = opt.getAttribute('data-value');
+                presetConfig[group] = value;
+                
+                upd();
+            });
+        });
+    });
+
+    // --- FUNCTIONAL BADGES COMPILATION ENGINE ---
+    const mk = (id, name, pat, img, st, gid) => {
+        return {
+            borderColor: st.bc,
+            groupId: gid,
+            id: id,
+            imageURL: img ? imageBaseURL + img : '',
+            isEnabled: true,
+            name: name,
+            pattern: pat,
+            tagColor: st.bg,
+            tagStyle: 'filled and bordered',
+            textColor: st.tc,
+            type: 'filter'
+        };
+    };
+
+    const generateBadgeConfig = (C) => {
+        const p = C.icon;
+        const mono = p === 'mono';
+        const T = [];
+        const G = [];
+        const qs = k => mono ? ST.res : ST[k];
+
+        const dvR = '\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b';
+        const dvY = '(?=.*(?i)' + dvR + ')';
+        const dvN = '(?!.*(?i)' + dvR + ')';
+        const atmosR = '(?i)\\batmos\\b';
+        const thR = '(?i)true[\\s._-]?hd';
+        const ddpR = '(?i)(?:dd[p+]|e[\\s._-]?ac[\\s._-]?3)';
+        const ddR = '(?i)(?:dd[^p+a-z]|(?<!e-)ac-?3)';
+
+        // 1. Quality Category
+        if (C.qual === 'bgb') {
+            T.push(mk('q-br', 'Best Remux', '(?=.*\\u265b)(?=.*(?i)remux)', p + '-best-remux.png', qs('best'), 'gq'));
+            T.push(mk('q-bb', 'Best BluRay', '(?=.*\\u265b)(?=.*(?i)(?:bluray|blu-ray))(?!.*(?i)remux)', p + '-best-bluray.png', qs('best'), 'gq'));
+            T.push(mk('q-bw', 'Best WebDL', '(?=.*\\u265b)(?=.*(?i)(?:web[-_. ]?dl|webdl|webrip))', p + '-best-webdl.png', qs('best'), 'gq'));
+            T.push(mk('q-gr', 'Good Remux', '(?=.*[\\u2b51\\u2726])(?=.*(?i)remux)', p + '-good-remux.png', qs('good'), 'gq'));
+            T.push(mk('q-gb', 'Good BluRay', '(?=.*[\\u2b51\\u2726])(?=.*(?i)(?:bluray|blu-ray))(?!.*(?i)remux)', p + '-good-bluray.png', qs('good'), 'gq'));
+            T.push(mk('q-gw', 'Good WebDL', '(?=.*[\\u2b51\\u2726])(?=.*(?i)(?:web[-_. ]?dl|webdl|webrip))', p + '-good-webdl.png', qs('good'), 'gq'));
+            T.push(mk('q-bad', 'Bad', '[\\u25b3\\u2205]', p + '-Bad.png', qs('bad'), 'gq'));
+        } else if (C.qual === 'tier') {
+            const subs = ['\\u2081', '\\u2082', '\\u2083'];
+            const srcs = [
+                ['remux', 'Remux', '\\u0280\\u1d07\\u1d0d\\u1d1c\\u0445'],
+                ['bluray', 'Bluray', '\\u0299\\u029f\\u1d1c\\u0280\\u1d00\\u028f'],
+                ['webdl', 'WEB', '\\u1d21\\u1d07\\u0299']
+            ];
+            for (let i = 0; i < 3; i++) {
+                const tn = 'T' + (i + 1);
+                for (const [k, l, sc] of srcs) {
+                    T.push(mk('q-' + k + '-t' + (i + 1), l + ' ' + tn, '(?:\\b' + l + ' ' + tn + '\\b|' + sc + ' \\u1d1b' + subs[i] + ')', p + '-icon-' + k + '-t' + (i + 1) + '.png', qs('best'), 'gq'));
+                }
             }
-        } catch (e) {
-            badgeConfig = getEmbeddedFallbackConfig();
+        } else if (C.qual === 'src') {
+            T.push(mk('q-r', 'Remux', '(?i)remux', p + '-remux.png', qs('best'), 'gq'));
+            T.push(mk('q-b', 'BluRay', '(?=.*(?i)(?:bluray|blu-ray))(?!.*(?i)remux)', p + '-bluray.png', qs('best'), 'gq'));
+            T.push(mk('q-w', 'WebDL', '(?i)(?:web[-_. ]?dl|webdl|webrip)', p + '-webdl.png', qs('best'), 'gq'));
+        } else {
+            // Percentages
+            const hsl = (h, s, l) => {
+                const a = s * Math.min(l, 1 - l);
+                const f = n => {
+                    const k = (n + h / 30) % 12;
+                    return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                };
+                return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+            };
+            const hx = (r, g, b) => ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+            const pctS = (p) => {
+                const c = hsl((p / 100) * 120, 1, .45);
+                const h = hx(...c);
+                return { bc: '#66' + h, bg: '#33' + h, tc: '#FF' + h };
+            };
+            for (let i = 100; i >= 1; i--) {
+                T.push(mk('p' + i, i + '%', '\\b' + i + '%', '', mono ? ST.res : pctS(i), 'gp'));
+            }
+            T.push(mk('q-r', 'Remux', '(?i)remux', p + '-remux.png', qs('best'), 'gq'));
+            T.push(mk('q-b', 'BluRay', '(?=.*(?i)(?:bluray|blu-ray))(?!.*(?i)remux)', p + '-bluray.png', qs('best'), 'gq'));
+            T.push(mk('q-w', 'WebDL', '(?i)(?:web[-_. ]?dl|webdl|webrip)', p + '-webdl.png', qs('best'), 'gq'));
         }
-        initApp();
+
+        // 1b. SeaDex - right after quality
+        T.push(mk('v-seadex', 'SeaDex', '(?i)\\b(?:seadex|best[\\s._-]?release|alt[\\s._-]?(?:best[\\s._-]?)?release)\\b|\\u1d00\\u029f\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07|\\u0299\\u1d07s\\u1d1b \\u0280\\u1d07\\u029f\\u1d07\\u1d00s\\u1d07', p + '-SeaDex.png', mono ? ST.res : ST.best, 'gv'));
+
+        // 2. Resolution Category
+        T.push(mk('r4', '4K', '(?i)^(?!.*\\b(?:1080[pi]?|720[pi]?)\\b).*?(?:\\b2160[pi]?\\b|\\b4k\\b|\\buhd\\b)', '4k.png', ST.res, 'gr'));
+        T.push(mk('r1', '1080p', '(?i)\\b1080[pi]?\\b', '1080p.png', ST.res, 'gr'));
+        T.push(mk('r7', '720p', '(?i)\\b720[pi]?\\b', '720p.png', ST.res, 'gr'));
+
+        // 3. HDR Display Category (Dolby Vision exclusion logic)
+        const hp = C.hdr === 'nodv' ? dvN : '';
+        T.push(mk('h+', 'HDR10+', hp + '(?=.*(?i)hdr\\s*10\\s*(?:\\+|plus|p))', 'HDR10Plus.png', ST.res, 'gv'));
+        T.push(mk('h1', 'HDR10', hp + '(?=.*(?i)hdr\\s*10)(?!.*(?i)hdr\\s*10\\s*(?:\\+|plus|p))', 'HDR10.png', ST.res, 'gv'));
+        T.push(mk('hh', 'HDR', hp + '(?=.*(?i)\\bHDR\\b)(?!.*(?i)hdr\\s*10)', 'HDR.png', ST.res, 'gv'));
+
+        // IMAX
+        T.push(mk('v-imax-e', 'IMAX Enhanced', '(?i)\\bimax[\\s._-]?enhanced\\b', 'IMAX-enhanced.png', ST.res, 'gv'));
+        T.push(mk('v-imax', 'IMAX', '(?i)^(?=.*\\bIMAX\\b)(?!.*enhanced)', 'IMAX.png', ST.res, 'gv'));
+
+        // 4. Audio + Dolby Vision Combo Category
+        if (C.dv === 'combo') {
+            T.push(mk('a-at-dv', 'Atmos+DV', '(?=.*' + atmosR + ')' + dvY, 'atmos-vision.png', ST.tr, 'ga'));
+            T.push(mk('a-at', 'Atmos', '(?=.*' + atmosR + ')' + dvN, 'atmos.png', ST.tr, 'ga'));
+            T.push(mk('a-th-dv', 'TrueHD+DV', '(?=.*' + thR + ')(?!.*' + atmosR + ')' + dvY, 'truehd-vision.png', ST.tr, 'ga'));
+            T.push(mk('a-th', 'TrueHD', '(?=.*' + thR + ')(?!.*' + atmosR + ')' + dvN, 'truehd.png', ST.tr, 'ga'));
+            T.push(mk('a-dp-dv', 'DD+ DV', '(?=.*' + ddpR + ')(?!.*' + atmosR + ')(?!.*' + thR + ')' + dvY, 'digitalplus-vision.png', ST.tr, 'ga'));
+            T.push(mk('a-dp', 'DD+', '(?=.*' + ddpR + ')(?!.*' + atmosR + ')(?!.*' + thR + ')' + dvN, 'digitalplus.png', ST.tr, 'ga'));
+            T.push(mk('a-dd-dv', 'DD DV', '(?=.*' + ddR + ')(?!.*' + ddpR + ')(?!.*' + thR + ')(?!.*' + atmosR + ')' + dvY, 'digital-vision.png', ST.tr, 'ga'));
+            T.push(mk('a-dd', 'DD', '(?=.*' + ddR + ')(?!.*' + ddpR + ')(?!.*' + thR + ')(?!.*' + atmosR + ')' + dvN, 'digital.png', ST.tr, 'ga'));
+            T.push(mk('a-dv', 'DV', '(?=.*(?i)' + dvR + ')(?!.*' + atmosR + ')(?!.*' + thR + ')(?!.*' + ddpR + ')(?!.*' + ddR + ')', 'vision.png', ST.tr, 'gv'));
+        } else {
+            T.push(mk('a-dv', 'DV', '(?i)' + dvR, 'vision.png', ST.tr, 'gv'));
+            T.push(mk('a-at', 'Atmos', atmosR, 'atmos.png', ST.tr, 'ga'));
+            T.push(mk('a-th', 'TrueHD', '(?=.*' + thR + ')(?!.*' + atmosR + ')', 'truehd.png', ST.tr, 'ga'));
+            T.push(mk('a-dp', 'DD+', '(?=.*' + ddpR + ')(?!.*' + atmosR + ')(?!.*' + thR + ')', 'digitalplus.png', ST.tr, 'ga'));
+            T.push(mk('a-dd', 'DD', '(?=.*' + ddR + ')(?!.*' + ddpR + ')(?!.*' + thR + ')(?!.*' + atmosR + ')', 'digital.png', ST.tr, 'ga'));
+        }
+
+        // DTS Surround (DTS, DTS-HD, DTS-HD MA, DTS:X)
+        T.push(mk('d-x', 'DTS:X', '(?i)\\bdts[-_.: ]?x\\b', 'dtsx.png', ST.res, 'ga'));
+        T.push(mk('d-ma', 'DTS-HD MA', '(?i)\\bdts[-_. ]?(?:hd[-_. ]?ma|ma|xll)\\b', 'dtshdma.png', ST.res, 'ga'));
+        T.push(mk('d-hd', 'DTS-HD', '(?i)\\bdts[-_. ]?hd\\b(?![-_. ]?ma)', 'dtshd.png', ST.res, 'ga'));
+        T.push(mk('d-d', 'DTS', '(?=.*(?i)\\bDTS\\b)(?!.*(?i)dts[-_. ]?(?:hd|ma|xll|x))', 'dts.png', ST.res, 'ga'));
+
+        // Surround Channels
+        T.push(mk('c7', '7.1', '(?i)[^0-9][7-8][ .][0-1]', '7dot1.png', ST.tr, 'gc'));
+        T.push(mk('c5', '5.1', '(?=.*(?i)[^0-9]5[ .][0-1])(?!.*(?i)[^0-9][7-8][ .][0-1])', '5dot1.png', ST.tr, 'gc'));
+
+        // Languages
+        const L = [
+            ['en', '🇬🇧', '(?i)\\benglish\\b|\\beng\\b'],
+            ['es', '🇪🇸', '(?i)\\bspanish\\b|\\bspa\\b'],
+            ['fr', '🇫🇷', '(?i)\\bfrench\\b|\\bfra\\b'],
+            ['de', '🇩🇪', '(?i)\\bgerman\\b|\\bdeu\\b'],
+            ['it', '🇮🇹', '(?i)\\bitalian\\b|\\bita\\b'],
+            ['pt', '🇧🇷', '(?i)\\bportuguese\\b|\\bpor\\b'],
+            ['ja', '🇯🇵', '(?i)\\bjapanese\\b|\\bjpn\\b'],
+            ['ko', '🇰🇷', '(?i)\\bkorean\\b|\\bkor\\b'],
+            ['zh', '🇨🇳', '(?i)\\bchinese\\b|\\bchi\\b'],
+            ['hi', '🇮🇳', '(?i)\\bhindi\\b|\\bhin\\b'],
+            ['ar', '🇸🇦', '(?i)\\barabic\\b|\\bara\\b'],
+            ['ru', '🇷🇺', '(?i)\\brussian\\b|\\brus\\b'],
+            ['mu', '🌐', '(?i)\\bmulti\\b|\\bdual[\\s._-]?audio\\b']
+        ];
+        for (const [c, f, pt] of L) {
+            T.push(mk('l-' + c, f, pt, '', ST.dim, 'gl'));
+        }
+
+        // Groups Structure
+        if (C.qual === 'pct') {
+            G.push({ borderColor: '#00000000', color: '#27C04F', id: 'gp', isExpanded: true, name: 'Score' });
+        }
+        G.push({ borderColor: ST.best.bc, color: '#27C04F', id: 'gq', isExpanded: true, name: 'Quality' });
+        G.push({ borderColor: ST.res.bc, color: '#FFBE01', id: 'gr', isExpanded: true, name: 'Resolution' });
+        G.push({ borderColor: ST.res.bc, color: '#FF6B6B', id: 'gv', isExpanded: true, name: 'Visual' });
+        G.push({ borderColor: '#00000000', color: '#45B7D1', id: 'ga', isExpanded: true, name: 'Audio' });
+        G.push({ borderColor: '#00000000', color: '#FFD700', id: 'gc', isExpanded: true, name: 'Channels' });
+        G.push({ borderColor: '#00000000', color: '#4ECDC4', id: 'gl', isExpanded: true, name: 'Language' });
+
+        return { filters: T, groups: G };
+    };
+
+    const getFormatterConfig = () => {
+        const d = presetConfig.desc === 'fn'
+            ? '{stream.filename::exists["{stream.filename}"||""]}'
+            : '{stream.filename::exists["{stream.filename}"||""]}\\n{service.shortName::exists["{service.shortName}"||""]}{stream.type::exists[" · {stream.type::title::replace(\'P2p\',\'P2P\')}"||""]}{stream.size::>0[" · {stream.size::bytes}"||""]}';
+        if (presetConfig.qual === 'pct') {
+            return {
+                name: '{stream.nSeScore::exists["{stream.nSeScore}% "||""]}{stream.quality::exists["{stream.quality::title}"||""]}',
+                desc: d
+            };
+        }
+        if (presetConfig.qual === 'bgb') {
+            return {
+                name: "{stream.nSeScore::exists[\"{stream.nSeScore::pstar::replace('\\u2bea','\\u2605')::replace('\\u2605\\u2605\\u2605\\u2605\\u2605','\\u265b ')::replace('\\u2605\\u2605\\u2605\\u2605\\u2606','\\u2b51 ')::replace('\\u2605\\u2605\\u2605\\u2606\\u2606','\\u2726 ')::replace('\\u2605\\u2605\\u2606\\u2606\\u2606','\\u25b3 ')::replace('\\u2605\\u2606\\u2606\\u2606\\u2606','\\u2205 ')::replace('\\u2606\\u2606\\u2606\\u2606\\u2606','\\u2205 ')}\"||\"\"]}" + '{stream.quality::exists["{stream.quality::title}"||""]}',
+                desc: d
+            };
+        }
+        return {
+            name: '{stream.quality::exists["{stream.quality::title}"||""]}',
+            desc: d
+        };
+    };
+
+    const parseARGBtoRGBA = (argbStr) => {
+        if (!argbStr) return 'transparent';
+        let hex = argbStr.trim().replace('#', '');
+        
+        if (hex.length === 8) {
+            const a = parseInt(hex.substring(0, 2), 16) / 255;
+            const r = parseInt(hex.substring(2, 4), 16);
+            const g = parseInt(hex.substring(4, 6), 16);
+            const b = parseInt(hex.substring(6, 8), 16);
+            return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`;
+        } else if (hex.length === 6) {
+            return `#${hex}`;
+        }
+        return 'transparent';
+    };
+
+    const parseRGBtoARGB = (hexStr) => {
+        if (!hexStr) return '#FFFFFFFF';
+        let hex = hexStr.trim().replace('#', '').toUpperCase();
+        if (hex.length === 6) {
+            return `#FF${hex}`;
+        }
+        return `#${hex}`;
+    };
+
+    const loadConfig = () => {
+        upd();
     };
 
     const initApp = () => {
         renderAccordion();
         updateJSONViewer();
         runLiveMatchTester();
+    };
+
+    const upd = () => {
+        badgeConfig = generateBadgeConfig(presetConfig);
+        
+        // Show/hide Setup Guide instructions dynamically
+        const needsAIOS = presetConfig.qual === 'bgb' || presetConfig.qual === 'pct';
+        const guideSteps = document.querySelectorAll('.guide-step');
+        
+        if (needsAIOS) {
+            guideSteps[0].style.display = 'flex';
+            guideSteps[1].style.display = 'flex';
+            document.querySelector('.guide-num[id="step-fusion-n"]').textContent = '3';
+        } else {
+            guideSteps[0].style.display = 'none';
+            guideSteps[1].style.display = 'none';
+            document.querySelector('.guide-num[id="step-fusion-n"]').textContent = '1';
+        }
+
+        initApp();
     };
 
     const renderAccordion = () => {
@@ -140,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="badge-pattern-text">${filter.pattern}</span>
                         </div>
                         <div class="badge-preview-cell">
-                            ${previewUrl ? `<img class="badge-preview-img" src="${previewUrl}" alt="${filter.name}">` : `<span class="badge-preview-chip" style="background-color: ${parseARGBtoRGBA(filter.tagColor) || 'transparent'}; border: 1px solid ${parseARGBtoRGBA(filter.borderColor) || 'transparent'}; color: ${parseARGBtoRGBA(filter.textColor) || '#FFFFFF'}">${filter.name}</span>`}
+                            ${previewUrl ? `<img class="badge-preview-img" src="${previewUrl}" alt="${filter.name}">` : `<span class="badge-preview-chip" style="background-color: ${parseARGBtoRGBA(filter.tagColor)}; border: 1px solid ${parseARGBtoRGBA(filter.borderColor)}; color: ${parseARGBtoRGBA(filter.textColor)}">${filter.name}</span>`}
                         </div>
                         <button class="badge-action-btn" data-id="${filter.id}">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -178,95 +441,258 @@ document.addEventListener('DOMContentLoaded', () => {
         jsonCodeBlock.textContent = JSON.stringify(badgeConfig, null, 2);
     };
 
+    // --- HIGH-FIDELITY MOCK STREAM RENDERER ---
     const runLiveMatchTester = () => {
-        const streamStr = testerInput.value.trim();
-        if (!streamStr) {
-            simTitle.textContent = "Untitled Stream";
-            simDesc.textContent = "No data";
-            simBadgesRow.innerHTML = '';
-            return;
-        }
+        previewListContainer.innerHTML = '';
+        const p = presetConfig.icon;
+        const mono = p === 'mono';
 
-        const parts = streamStr.split('|').map(s => s.trim());
-        const mockName = parts[0] || 'Scraper';
-        const mockTitle = parts.slice(1).join(' | ');
+        const fmtName = (s) => {
+            const sym = { best: '♛ ', good: '⭑ ', ok: '✦ ' };
+            if (presetConfig.qual === 'bgb') return (sym[s.q] || '') + s.qual;
+            if (presetConfig.qual === 'pct') return s.pct + '% ' + s.qual;
+            return s.qual;
+        };
 
-        simTitle.textContent = mockTitle ? `${mockName} | ${mockTitle}` : mockName;
-
-        let size = '1.45 GB';
-        let quality = '1080p';
-        let language = 'Multi';
-
-        if (streamStr.toLowerCase().includes('4k') || streamStr.toLowerCase().includes('2160p')) {
-            quality = '4K';
-            size = '12.80 GB';
-        } else if (streamStr.toLowerCase().includes('720p')) {
-            quality = '720p';
-            size = '680 MB';
-        }
-
-        if (streamStr.toLowerCase().includes('french')) language = 'French';
-        else if (streamStr.toLowerCase().includes('spanish')) language = 'Spanish';
-
-        const mockDesc = `${quality} • ${size} • ${language}`;
-        simDesc.textContent = mockDesc;
-
-        simBadgesRow.innerHTML = '';
-        const activeFilters = badgeConfig.filters.filter(f => f.isEnabled);
-
-        activeFilters.forEach(filter => {
-            try {
-                let cleanedPattern = filter.pattern;
-                let flags = '';
-                
-                if (cleanedPattern.startsWith('(?i)')) {
-                    flags += 'i';
-                    cleanedPattern = cleanedPattern.substring(4);
-                }
-
-                const regex = new RegExp(cleanedPattern, flags);
-                const isNameMatch = regex.test(mockName);
-                const isDescMatch = regex.test(mockDesc) || regex.test(mockTitle);
-                
-                if (isNameMatch || isDescMatch) {
-                    const chip = document.createElement('div');
-                    chip.className = 'n-badge-chip';
-                    
-                    const webBgColor = parseARGBtoRGBA(filter.tagColor);
-                    const webBorderColor = parseARGBtoRGBA(filter.borderColor);
-                    const webTextColor = parseARGBtoRGBA(filter.textColor) || '#FFFFFF';
-
-                    if (filter.tagStyle === 'filled') {
-                        chip.style.backgroundColor = webBgColor || 'var(--pico-card-background-color)';
-                    } else if (filter.tagStyle === 'outlined') {
-                        chip.style.border = `1px solid ${webBorderColor || 'var(--pico-border-color)'}`;
-                    } else if (filter.tagStyle === 'filled and bordered') {
-                        chip.style.backgroundColor = webBgColor || 'var(--pico-card-background-color)';
-                        chip.style.border = `1px solid ${webBorderColor || 'var(--pico-border-color)'}`;
-                    }
-                    
-                    chip.style.color = webTextColor;
-
-                    const finalImageURL = getScaledImageURL(filter.imageURL);
-
-                    if (finalImageURL) {
-                        chip.innerHTML = `<img src="${finalImageURL}" alt="${filter.name}">`;
-                    } else {
-                        chip.textContent = filter.name;
-                        chip.style.fontSize = '9px';
-                        chip.style.fontWeight = 'bold';
-                    }
-
-                    simBadgesRow.appendChild(chip);
-                }
-            } catch (err) {
-                console.error(`Invalid matcher rule for ${filter.name}:`, err);
+        const renderTag = (label, img, st, lg) => {
+            const s = `border-color: ${parseARGBtoRGBA(st.bc)}; background: ${parseARGBtoRGBA(st.bg)}; color: ${parseARGBtoRGBA(st.tc)}`;
+            const cls = 'n-badge-chip' + (lg ? ' lg' : '');
+            if (img) {
+                return `<span class="${cls}" style="${s}"><img src="${imageBaseURL + img}" alt="${label || ''}"></span>`;
             }
+            return `<span class="${cls}" style="${s}">${label}</span>`;
+        };
+
+        // Render standard predefined streams
+        STREAMS.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'sim-stream-card';
+            
+            const descTxt = presetConfig.desc === 'fn' 
+                ? s.fn 
+                : `${s.fn}\nRD · Debrid · ${s.size}`;
+
+            let badgesHTML = '';
+
+            // 1. QUALITY
+            if (presetConfig.qual === 'bgb') {
+                const qst = s.q === 'ok' ? ST.res : (mono ? ST.res : ST[s.q]);
+                const img = s.q === 'ok' ? 'mono-ok-' + s.src + '.png' : p + '-' + s.q + '-' + s.src + '.png';
+                badgesHTML += renderTag(null, img, qst);
+            } else if (presetConfig.qual === 'tier') {
+                badgesHTML += renderTag(null, p + '-icon-' + s.src + '-' + s.tier + '.png', mono ? ST.res : ST.best);
+            } else if (presetConfig.qual === 'src') {
+                badgesHTML += renderTag(null, p + '-' + s.src + '.png', mono ? ST.res : ST.best);
+            } else {
+                // Percentages HSL style
+                const hsl = (h, s, l) => {
+                    const a = s * Math.min(l, 1 - l);
+                    const f = n => {
+                        const k = (n + h / 30) % 12;
+                        return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                    };
+                    return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+                };
+                const hx = (r, g, b) => ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+                const pctS = (p) => {
+                    const c = hsl((p / 100) * 120, 1, .45);
+                    const h = hx(...c);
+                    return { bc: '#66' + h, bg: '#33' + h, tc: '#FF' + h };
+                };
+                badgesHTML += renderTag(s.pct + '%', null, mono ? ST.res : pctS(s.pct));
+            }
+
+            // 1b. SeaDex
+            if (s.seadex) {
+                badgesHTML += renderTag(null, p + '-SeaDex.png', mono ? ST.res : ST.best);
+            }
+
+            // 2. RESOLUTION
+            const ri = s.res === '4K' ? '4k.png' : s.res.toLowerCase() + '.png';
+            badgesHTML += renderTag(null, ri, ST.res);
+
+            // 3. HDR
+            if (s.hdr && (presetConfig.hdr === 'always' || !s.dv)) {
+                const hi = s.hdr === 'HDR10+' ? 'HDR10Plus.png' : s.hdr === 'HDR10' ? 'HDR10.png' : 'HDR.png';
+                badgesHTML += renderTag(null, hi, ST.res);
+            }
+
+            // 3b. IMAX
+            if (s.imax === 'IMAX Enhanced') badgesHTML += renderTag(null, 'IMAX-enhanced.png', ST.res);
+            else if (s.imax === 'IMAX') badgesHTML += renderTag(null, 'IMAX.png', ST.res);
+
+            // 4. AUDIO + DOLBY VISION
+            const isDTS = s.aud && s.aud.startsWith('dts');
+            if (presetConfig.dv === 'combo') {
+                if (s.dv && !isDTS) {
+                    if (s.aud === 'atmos') badgesHTML += renderTag(null, 'atmos-vision.png', ST.tr, true);
+                    else if (s.aud === 'truehd') badgesHTML += renderTag(null, 'truehd-vision.png', ST.tr, true);
+                    else if (s.aud === 'ddp') badgesHTML += renderTag(null, 'digitalplus-vision.png', ST.tr, true);
+                    else if (s.aud === 'dd') badgesHTML += renderTag(null, 'digital-vision.png', ST.tr, true);
+                    else badgesHTML += renderTag(null, 'vision.png', ST.tr, true);
+                } else {
+                    if (s.dv) badgesHTML += renderTag(null, 'vision.png', ST.tr, true);
+                    if (s.aud === 'atmos') badgesHTML += renderTag(null, 'atmos.png', ST.tr, true);
+                    else if (s.aud === 'truehd') badgesHTML += renderTag(null, 'truehd.png', ST.tr, true);
+                    else if (s.aud === 'ddp') badgesHTML += renderTag(null, 'digitalplus.png', ST.tr, true);
+                    else if (s.aud === 'dd') badgesHTML += renderTag(null, 'digital.png', ST.tr, true);
+                    else if (isDTS) {
+                        const di = s.aud === 'dtsx' ? 'dtsx' : s.aud === 'dtshdma' ? 'dtshdma' : s.aud === 'dtshd' ? 'dtshd' : 'dts';
+                        badgesHTML += renderTag(null, di + '.png', ST.res);
+                    }
+                }
+            } else {
+                if (s.dv) badgesHTML += renderTag(null, 'vision.png', ST.tr, true);
+                if (s.aud === 'atmos') badgesHTML += renderTag(null, 'atmos.png', ST.tr, true);
+                else if (s.aud === 'truehd') badgesHTML += renderTag(null, 'truehd.png', ST.tr, true);
+                else if (s.aud === 'ddp') badgesHTML += renderTag(null, 'digitalplus.png', ST.tr, true);
+                else if (s.aud === 'dd') badgesHTML += renderTag(null, 'digital.png', ST.tr, true);
+                else if (isDTS) {
+                    const di = s.aud === 'dtsx' ? 'dtsx' : s.aud === 'dtshdma' ? 'dtshdma' : s.aud === 'dtshd' ? 'dtshd' : 'dts';
+                    badgesHTML += renderTag(null, di + '.png', ST.res);
+                }
+            }
+
+            // 5. CHANNELS
+            badgesHTML += renderTag(null, s.ch === '7.1' ? '7dot1.png' : '5dot1.png', ST.tr);
+
+            card.innerHTML = `
+                <div class="sim-meta">
+                    <h4 class="sim-title-text">${fmtName(s)}</h4>
+                    <p class="sim-desc-text">${descTxt}</p>
+                </div>
+                <div class="badges-row">${badgesHTML}</div>
+            `;
+            previewListContainer.appendChild(card);
         });
+
+        // Render the user's interactive custom text match stream card at the end
+        const customTitleStr = testerInput.value.trim();
+        if (customTitleStr) {
+            const customCard = document.createElement('div');
+            customCard.className = 'sim-stream-card';
+            customCard.style.border = '1px dashed var(--pico-primary)';
+
+            const parts = customTitleStr.split('|').map(s => s.trim());
+            const mockName = parts[0] || 'Scraper';
+            const mockTitle = parts.slice(1).join(' | ');
+            const finalTitle = mockTitle ? `${mockName} | ${mockTitle}` : mockName;
+
+            let size = '1.45 GB';
+            let quality = '1080p';
+            let language = 'Multi';
+
+            if (customTitleStr.toLowerCase().includes('4k') || customTitleStr.toLowerCase().includes('2160p')) {
+                quality = '4K';
+                size = '12.80 GB';
+            } else if (customTitleStr.toLowerCase().includes('720p')) {
+                quality = '720p';
+                size = '680 MB';
+            }
+
+            if (customTitleStr.toLowerCase().includes('french')) language = 'French';
+            else if (customTitleStr.toLowerCase().includes('spanish')) language = 'Spanish';
+
+            const mockDesc = `${quality} • ${size} • ${language}`;
+
+            const customBadgesRow = document.createElement('div');
+            customBadgesRow.className = 'badges-row';
+
+            const activeFilters = badgeConfig.filters.filter(f => f.isEnabled);
+            activeFilters.forEach(filter => {
+                try {
+                    let cleanedPattern = filter.pattern;
+                    let flags = '';
+                    
+                    if (cleanedPattern.startsWith('(?i)')) {
+                        flags += 'i';
+                        cleanedPattern = cleanedPattern.substring(4);
+                    }
+
+                    const regex = new RegExp(cleanedPattern, flags);
+                    const isNameMatch = regex.test(mockName);
+                    const isDescMatch = regex.test(mockDesc) || regex.test(mockTitle);
+                    
+                    if (isNameMatch || isDescMatch) {
+                        const chip = document.createElement('div');
+                        chip.className = 'n-badge-chip';
+                        
+                        const webBgColor = parseARGBtoRGBA(filter.tagColor);
+                        const webBorderColor = parseARGBtoRGBA(filter.borderColor);
+                        const webTextColor = parseARGBtoRGBA(filter.textColor) || '#FFFFFF';
+
+                        if (filter.tagStyle === 'filled') {
+                            chip.style.backgroundColor = webBgColor;
+                        } else if (filter.tagStyle === 'outlined') {
+                            chip.style.border = `1px solid ${webBorderColor}`;
+                        } else if (filter.tagStyle === 'filled and bordered') {
+                            chip.style.backgroundColor = webBgColor;
+                            chip.style.border = `1px solid ${webBorderColor}`;
+                        }
+                        
+                        chip.style.color = webTextColor;
+
+                        const finalImageURL = getScaledImageURL(filter.imageURL);
+
+                        if (finalImageURL) {
+                            chip.innerHTML = `<img src="${finalImageURL}" alt="${filter.name}">`;
+                        } else {
+                            chip.textContent = filter.name;
+                            chip.style.fontSize = '9px';
+                            chip.style.fontWeight = 'bold';
+                        }
+                        customBadgesRow.appendChild(chip);
+                    }
+                } catch (err) {
+                    console.error(`Invalid matcher rule for ${filter.name}:`, err);
+                }
+            });
+
+            customCard.innerHTML = `
+                <div class="sim-meta">
+                    <h4 class="sim-title-text" style="color: var(--pico-primary);">Interactive Simulator</h4>
+                    <p class="sim-desc-text" style="margin-bottom: 0.2rem;"><b>Match:</b> ${finalTitle}</p>
+                    <p class="sim-desc-text">${mockDesc}</p>
+                </div>
+            `;
+            customCard.appendChild(customBadgesRow);
+            previewListContainer.appendChild(customCard);
+        }
     };
 
     testerInput.addEventListener('input', runLiveMatchTester);
 
+    // --- SETUP INTEGRATION BUTTON HANDLERS ---
+    const handleCopyText = (textValue) => {
+        navigator.clipboard.writeText(textValue).then(() => {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.display = 'block';
+            toast.textContent = 'Copied to Clipboard!';
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 1200);
+        });
+    };
+
+    document.getElementById('btn-copy-fname').addEventListener('click', () => {
+        const fmt = getFormatterConfig();
+        handleCopyText(fmt.name);
+    });
+
+    document.getElementById('btn-copy-fdesc').addEventListener('click', () => {
+        const fmt = getFormatterConfig();
+        handleCopyText(fmt.desc);
+    });
+
+    document.getElementById('btn-copy-import-url').addEventListener('click', () => {
+        const importURL = 'https://raw.githubusercontent.com/dustincos/nuvio-badges/main/presets/' + presetConfig.icon + '-' + presetConfig.qual + '-' + presetConfig.dv + '-' + presetConfig.hdr + '.json';
+        handleCopyText(importURL);
+    });
+
+    // --- FORM HANDLER (ADD BADGE) ---
     addBadgeForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -331,31 +757,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('[data-tab="tab-edit"]').click();
     });
 
-    const parseARGBtoRGBA = (argbStr) => {
-        if (!argbStr) return null;
-        let hex = argbStr.trim().replace('#', '');
-        
-        if (hex.length === 8) {
-            const a = parseInt(hex.substring(0, 2), 16) / 255;
-            const r = parseInt(hex.substring(2, 4), 16);
-            const g = parseInt(hex.substring(4, 6), 16);
-            const b = parseInt(hex.substring(6, 8), 16);
-            return `rgba(${r}, ${g}, ${b}, ${a})`;
-        } else if (hex.length === 6) {
-            return `#${hex}`;
-        }
-        return null;
-    };
-
-    const parseRGBtoARGB = (hexStr) => {
-        if (!hexStr) return '#FFFFFFFF';
-        let hex = hexStr.trim().replace('#', '').toUpperCase();
-        if (hex.length === 6) {
-            return `#FF${hex}`;
-        }
-        return `#${hex}`;
-    };
-
     document.getElementById('btn-export-json').addEventListener('click', () => {
         const jsonStr = JSON.stringify(badgeConfig, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -381,746 +782,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 2000);
         });
     });
-
-    const getEmbeddedFallbackConfig = () => {
-        return {
-          "groups": [
-            {
-              "id": "gq",
-              "name": "Quality",
-              "color": "#FF27C04F",
-              "isExpanded": true
-            },
-            {
-              "id": "gr",
-              "name": "Resolution",
-              "color": "#FFFFBE01",
-              "isExpanded": true
-            },
-            {
-              "id": "gv",
-              "name": "Visual",
-              "color": "#FFFF6B6B",
-              "isExpanded": true
-            },
-            {
-              "id": "ga",
-              "name": "Audio",
-              "color": "#FF45B7D1",
-              "isExpanded": true
-            },
-            {
-              "id": "gc",
-              "name": "Channels",
-              "color": "#FFFFD700",
-              "isExpanded": true
-            },
-            {
-              "id": "gl",
-              "name": "Language",
-              "color": "#FF4ECDC4",
-              "isExpanded": true
-            },
-            {
-              "id": "gp",
-              "name": "Providers",
-              "color": "#FF00FFFF",
-              "isExpanded": true
-            }
-          ],
-          "filters": [
-            {
-              "borderColor": "#FF00FF37",
-              "groupId": "gq",
-              "id": "q-r",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/colored-remux.png",
-              "isEnabled": true,
-              "name": "Remux",
-              "pattern": "(?i)\\bremux\\b",
-              "tagColor": "#E600E932",
-              "tagStyle": "filled",
-              "textColor": "#27C04F",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF00FF37",
-              "groupId": "gq",
-              "id": "q-b",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/colored-bluray.png",
-              "isEnabled": true,
-              "name": "BluRay",
-              "pattern": "(?i)^(?=.*(?:bluray|blu-ray))(?!.*remux)",
-              "tagColor": "#E600E932",
-              "tagStyle": "filled",
-              "textColor": "#27C04F",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF00FF37",
-              "groupId": "gq",
-              "id": "q-w",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/colored-webdl.png",
-              "isEnabled": true,
-              "name": "WebDL",
-              "pattern": "(?i)\\b(?:web[-_. ]?dl|webdl|webrip|web-rip)\\b",
-              "tagColor": "#E600E932",
-              "tagStyle": "filled",
-              "textColor": "#27C04F",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF00FF37",
-              "groupId": "gv",
-              "id": "v-seadex",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/colored-SeaDex.png",
-              "isEnabled": true,
-              "name": "SeaDex",
-              "pattern": "(?i)\\b(?:seadex|best[\\s._-]?release|alt[\\s._-]?(?:best[\\s._-]?)?release)\\b|ᴀʟᴛ ʀᴇʟᴇᴀsᴇ|ʙᴇsᴛ ʀᴇʟᴇᴀsᴇ",
-              "tagColor": "#E600E932",
-              "tagStyle": "filled",
-              "textColor": "#27C04F",
-              "type": "filter"
-            },
-            {
-              "groupId": "gr",
-              "id": "r-4k",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/4k.png",
-              "isEnabled": true,
-              "name": "4K",
-              "pattern": "(?i)^(?=.*(?:2160[pi]?|4k|uhd))(?!.*(?:1080[pi]?|720[pi]?))",
-              "tagColor": "#FFBE01",
-              "tagStyle": "filled",
-              "textColor": "#FFBE01",
-              "type": "filter",
-              "borderColor": "#FFBE01"
-            },
-            {
-              "groupId": "gr",
-              "id": "r-1080",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/1080p.png",
-              "isEnabled": true,
-              "name": "1080p",
-              "pattern": "(?i)\\b1080[pi]?\\b",
-              "tagColor": "#FF6904",
-              "tagStyle": "filled",
-              "textColor": "#FF9A3D",
-              "type": "filter",
-              "borderColor": "#FF6904"
-            },
-            {
-              "groupId": "gr",
-              "id": "r-720",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/720p.png",
-              "isEnabled": true,
-              "name": "720p",
-              "pattern": "(?i)\\b720[pi]?\\b",
-              "tagColor": "#FB411C",
-              "tagStyle": "filled",
-              "textColor": "#FF9A3D",
-              "type": "filter",
-              "borderColor": "#FB411C"
-            },
-            {
-              "borderColor": "#FFBE01",
-              "groupId": "gv",
-              "id": "a-dv",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/DV.png",
-              "isEnabled": true,
-              "name": "DV",
-              "pattern": "(?i)\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b",
-              "tagColor": "#FFBE01",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFBE01",
-              "groupId": "gv",
-              "id": "v-hdr10p",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/HDR10Plus.png",
-              "isEnabled": true,
-              "name": "HDR10+",
-              "pattern": "(?i)^(?!.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)(?=.*hdr[\\s._-]?10[\\s._-]?(?:\\\\+|plus|p))",
-              "tagColor": "#FFBE01",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFBE01",
-              "groupId": "gv",
-              "id": "v-hdr10",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/HDR10.png",
-              "isEnabled": true,
-              "name": "HDR10",
-              "pattern": "(?i)^(?!.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)(?=.*hdr[\\s._-]?10)(?!.*hdr[\\s._-]?10[\\s._-]?(?:\\\\+|plus|p))",
-              "tagColor": "#FFBE01",
-              "tagStyle": "filled",
-              "textColor": "#FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFBE01",
-              "groupId": "gv",
-              "id": "v-hdr",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/HDR.png",
-              "isEnabled": true,
-              "name": "HDR",
-              "pattern": "(?i)^(?!.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)(?=.*\\bHDR\\b)(?!.*hdr[\\s._-]?10)",
-              "tagColor": "#FFBE01",
-              "tagStyle": "filled",
-              "textColor": "#FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF858283",
-              "groupId": "gv",
-              "id": "v-imax-e",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/IMAX-enhanced.png",
-              "isEnabled": true,
-              "name": "IMAX Enhanced",
-              "pattern": "(?i)\\bimax[\\s._-]?enhanced\\b",
-              "tagColor": "#33FFFFFF",
-              "tagStyle": "filled and bordered",
-              "textColor": "#FFFFFF",
-              "type": "filter"
-            },
-            {
-              "groupId": "gv",
-              "id": "v-imax",
-              "imageURL": "https://github.com/nobnobz/Omni-Template-Bot-Bid-Raiser/blob/main/Other/regex%20tags/IMAXv2.PNG?raw=true",
-              "isEnabled": true,
-              "name": "IMAX",
-              "pattern": "(?i)^(?=.*\\bIMAX\\b)(?!.*enhanced)",
-              "tagColor": "#FFBE01",
-              "tagStyle": "filled",
-              "textColor": "#FFBE01",
-              "type": "filter",
-              "borderColor": "#FFBE01"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "ga",
-              "id": "a-at-dv",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/atmos-vision.png",
-              "isEnabled": false,
-              "name": "Atmos+DV",
-              "pattern": "(?i)^(?=.*\\batmos\\b)(?=.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-th",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/TrueHD.png",
-              "isEnabled": true,
-              "name": "TrueHD",
-              "pattern": "(?i)^(?=.*\\btrue[\\s._-]?hd\\b)(?!.*\\batmos\\b)(?!.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-at",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/Atmos.png",
-              "isEnabled": true,
-              "name": "Atmos",
-              "pattern": "(?i)\\batmos\\b",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "ga",
-              "id": "a-th-dv",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/truehd-vision.png",
-              "isEnabled": false,
-              "name": "TrueHD+DV",
-              "pattern": "(?i)^(?=.*\\btrue[\\s._-]?hd\\b)(?!.*\\batmos\\b)(?=.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "ga",
-              "id": "a-dp-dv",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/digitalplus-vision.png",
-              "isEnabled": false,
-              "name": "DD++DV",
-              "pattern": "(?i)^(?=.*(?:\\bddp|\\bdd\\+|\\beac-?3|\\be-?ac-?3))(?!.*\\batmos\\b)(?!.*\\btrue[\\s._-]?hd\\b)(?=.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-dtsx",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/dtsx.png",
-              "isEnabled": true,
-              "name": "DTS:X",
-              "pattern": "(?i)\\bdts[-_.: ]?x\\b",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-dtsma",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/dtsHDMA.png",
-              "isEnabled": true,
-              "name": "DTS-HD MA",
-              "pattern": "(?i)^(?=.*\\bdts[-_. ]?(?:hd[-_. ]?)?ma\\b)(?!.*\\bdts[-_.: ]?x\\b)",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-dtshd",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/dtsHD.png",
-              "isEnabled": true,
-              "name": "DTS-HD",
-              "pattern": "(?i)^(?=.*\\bdts[-_. ]?hd\\b)(?!.*\\bdts[-_. ]?(?:hd[-_. ]?)?ma\\b)(?!.*\\bdts[-_.: ]?x\\b)",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-dts",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/dts.png",
-              "isEnabled": true,
-              "name": "DTS",
-              "pattern": "(?i)^(?=.*\\bDTS\\b)(?!.*\\bdts[-_. ]?(?:hd|ma|xll|x))",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-dp",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/DDPLUS.png",
-              "isEnabled": true,
-              "name": "DD+",
-              "pattern": "(?i)^(?=.*(?:\\bddp|\\bdd\\+|\\beac-?3|\\be-?ac-?3))(?!.*\\batmos\\b)(?!.*\\btrue[\\s._-]?hd\\b)(?!.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "ga",
-              "id": "a-dd-dv",
-              "imageURL": "https://raw.githubusercontent.com/9mousaa/BetterFormatter/main/images/digital-vision.png",
-              "isEnabled": false,
-              "name": "DD+DV",
-              "pattern": "(?i)^(?=.*\\b(?:dd[25][. ][01]|dd[^p+a-z]\\b|\\bac-?3)\\b)(?!.*(?:\\bddp|\\bdd\\+|\\beac-?3|\\be-?ac-?3))(?!.*\\btrue[\\s._-]?hd\\b)(?!.*\\batmos\\b)(?=.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "ga",
-              "id": "a-dd",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/DD.png",
-              "isEnabled": true,
-              "name": "DD",
-              "pattern": "(?i)^(?=.*\\b(?:dd[25][. ][01]|dd[^p+a-z]\\b|\\bac-?3)\\b)(?!.*(?:\\bddp|\\bdd\\+|\\beac-?3|\\be-?ac-?3))(?!.*\\btrue[\\s._-]?hd\\b)(?!.*\\batmos\\b)(?!.*\\b(?:dv|dovi|dolby[\\s._-]?vision)\\b)",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "gc",
-              "id": "ch-71",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/71.png",
-              "isEnabled": true,
-              "name": "7.1",
-              "pattern": "[^0-9][7-8][. ][01](?![0-9])",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "groupId": "gc",
-              "id": "ch-61",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/61.png",
-              "isEnabled": true,
-              "name": "6.1",
-              "pattern": "(?i)(?=.*[^0-9]6[ .][0-1]\\b)(?!.*[^0-9][7-8][ .][0-1]\\b)(?!.*[^0-9]5[ .][0-1]\\b)(?!.*(?<!repac)[^0-9][1-4][ .][0-1]\\b|\\\\b(Stereo|Mono)\\\\b)",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter",
-              "borderColor": "#FFFFFF"
-            },
-            {
-              "borderColor": "#FFFFFF",
-              "groupId": "gc",
-              "id": "ch-51",
-              "imageURL": "https://raw.githubusercontent.com/nobnobz/Omni-Template-Bot-Bid-Raiser/main/Other/regex%20tags/51.png",
-              "isEnabled": true,
-              "name": "5.1",
-              "pattern": "^(?=.*[^0-9]5[. ][01](?![0-9]))(?!.*[^0-9][7-8][. ][01](?![0-9]))",
-              "tagColor": "#FFFFFF",
-              "tagStyle": "filled",
-              "textColor": "#0e0e0e",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-en",
-              "imageURL": "https://img.shields.io/badge/🇬🇧_ENG-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇬🇧",
-              "pattern": "(?i)\\benglish\\b|\\beng\\b",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-es",
-              "imageURL": "https://img.shields.io/badge/🇪🇸_SPA-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇪🇸",
-              "pattern": "(?i)\\bspanish\\b|\\bspa\\b",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-fr",
-              "imageURL": "https://img.shields.io/badge/🇫🇷_FRA-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇫🇷",
-              "pattern": "(?i)\\bfrench\\b|\\bfra\\b|\\bfr\\b|\\bvff\\b|\\bvfq\\b",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-de",
-              "imageURL": "https://img.shields.io/badge/🇩🇪_DEU-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇩🇪",
-              "pattern": "(?i)\\bgerman\\b|\\bdeu\\b",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-it",
-              "imageURL": "https://img.shields.io/badge/🇮🇹_ITA-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇮🇹",
-              "pattern": "(?i)\\bitalian\\b|\\bita\\b",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-pt",
-              "imageURL": "https://img.shields.io/badge/🇧🇷_POR-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇧🇷",
-              "pattern": "(?i)\\bportuguese\\b|\\bpor\\b",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-ja",
-              "imageURL": "https://img.shields.io/badge/🇯🇵_JPN-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇯🇵",
-              "pattern": "(?i)\\bjapanese\\b|\\bjpn\\b|[぀-ゟ゠-ヿ]{3,}",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-ko",
-              "imageURL": "https://img.shields.io/badge/🇰🇷_KOR-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇰🇷",
-              "pattern": "(?i)\\bkorean\\b|\\bkor\\b|[가-힯]{3,}",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-zh",
-              "imageURL": "https://img.shields.io/badge/🇨🇳_CHI-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇨🇳",
-              "pattern": "(?i)\\bchinese\\b|\\bchi\\b|[一-鿿]{3,}",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-hi",
-              "imageURL": "https://img.shields.io/badge/🇮🇳_HIN-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇮🇳",
-              "pattern": "(?i)\\bhindi\\b|\\bhin\\b|[ऀ-ॿ]{3,}",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-ar",
-              "imageURL": "https://img.shields.io/badge/🇸🇦_ARA-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇸🇦",
-              "pattern": "(?i)\\barabic\\b|\\bara\\b|[؀-ۿ]{3,}",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-ru",
-              "imageURL": "https://img.shields.io/badge/🇷🇺_RUS-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🇷🇺",
-              "pattern": "(?i)\\brussian\\b|\\brus\\b|[Ѐ-ӿ]{3,}",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#00000000",
-              "groupId": "gl",
-              "id": "l-mu",
-              "imageURL": "https://img.shields.io/badge/🌐_MULTI-2A2A2A.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🌐",
-              "pattern": "(?i)\\bmulti\\b|\\bdual[\\s._-]?audio\\b",
-              "tagColor": "#00000000",
-              "tagStyle": "filled and bordered",
-              "textColor": "#80FFFFFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF00D2FF",
-              "groupId": "gp",
-              "id": "p-vidlink",
-              "imageURL": "https://img.shields.io/badge/⚡_Vidlink-00D2FF.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "⚡ Vidlink",
-              "pattern": "(?i)vidlink",
-              "tagColor": "#FF00D2FF",
-              "tagStyle": "outlined",
-              "textColor": "#00D2FF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFF0055",
-              "groupId": "gp",
-              "id": "p-moviebox",
-              "imageURL": "https://img.shields.io/badge/🎬_MovieBox-FF0055.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🎬 MovieBox",
-              "pattern": "(?i)moviebox",
-              "tagColor": "#FFFF0055",
-              "tagStyle": "outlined",
-              "textColor": "#FF0055",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF7F00FF",
-              "groupId": "gp",
-              "id": "p-netmirror",
-              "imageURL": "https://img.shields.io/badge/📺_NetMirror-7F00FF.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "📺 NetMirror",
-              "pattern": "(?i)netmirror",
-              "tagColor": "#FF7F00FF",
-              "tagStyle": "outlined",
-              "textColor": "#7F00FF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFFD700",
-              "groupId": "gp",
-              "id": "p-4khdhub",
-              "imageURL": "https://img.shields.io/badge/🚀_4KHDHub-FFD700.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🚀 4KHDHub",
-              "pattern": "(?i)4khdhub",
-              "tagColor": "#FFFFD700",
-              "tagStyle": "outlined",
-              "textColor": "#FFD700",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF00FF66",
-              "groupId": "gp",
-              "id": "p-movix",
-              "imageURL": "https://img.shields.io/badge/🍿_Movix-00FF66.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🍿 Movix",
-              "pattern": "(?i)movix",
-              "tagColor": "#FF00FF66",
-              "tagStyle": "outlined",
-              "textColor": "#00FF66",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFF3300",
-              "groupId": "gp",
-              "id": "p-notorrent",
-              "imageURL": "https://img.shields.io/badge/🔗_NoTorrent-FF3300.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🔗 NoTorrent",
-              "pattern": "(?i)notorrent",
-              "tagColor": "#FFFF3300",
-              "tagStyle": "outlined",
-              "textColor": "#FF3300",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF9933FF",
-              "groupId": "gp",
-              "id": "p-playimdb",
-              "imageURL": "https://img.shields.io/badge/🎭_PlayImdb-9933FF.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🎭 PlayImdb",
-              "pattern": "(?i)playimdb",
-              "tagColor": "#FF9933FF",
-              "tagStyle": "outlined",
-              "textColor": "#9933FF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF33CCFF",
-              "groupId": "gp",
-              "id": "p-videasy",
-              "imageURL": "https://img.shields.io/badge/⭐_Videasy-33CCFF.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "⭐ Videasy",
-              "pattern": "(?i)videasy",
-              "tagColor": "#FF33CCFF",
-              "tagStyle": "outlined",
-              "textColor": "#33CCFF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFF9900",
-              "groupId": "gp",
-              "id": "p-vidfast",
-              "imageURL": "https://img.shields.io/badge/⚡_VidFastPro-FF9900.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "⚡ VidFastPro",
-              "pattern": "(?i)vidfast",
-              "tagColor": "#FFFF9900",
-              "tagStyle": "outlined",
-              "textColor": "#FF9900",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFCC00FF",
-              "groupId": "gp",
-              "id": "p-xpass",
-              "imageURL": "https://img.shields.io/badge/🔮_Xpass-CC00FF.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🔮 Xpass",
-              "pattern": "(?i)xpass",
-              "tagColor": "#FFCC00FF",
-              "tagStyle": "outlined",
-              "textColor": "#CC00FF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FF00E5FF",
-              "groupId": "gp",
-              "id": "p-autoembed",
-              "imageURL": "https://img.shields.io/badge/💎_AutoEmbed-00E5FF.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "💎 AutoEmbed",
-              "pattern": "(?i)autoembed",
-              "tagColor": "#FF00E5FF",
-              "tagStyle": "outlined",
-              "textColor": "#00E5FF",
-              "type": "filter"
-            },
-            {
-              "borderColor": "#FFFF0033",
-              "groupId": "gp",
-              "id": "p-dahmermovies",
-              "imageURL": "https://img.shields.io/badge/🔥_DahmerMovies-FF0033.png?style=flat&scale=3",
-              "isEnabled": true,
-              "name": "🔥 DahmerMovies",
-              "pattern": "(?i)dahmermovies",
-              "tagColor": "#FFFF0033",
-              "tagStyle": "outlined",
-              "textColor": "#FF0033",
-              "type": "filter"
-            }
-          ]
-        };
-    };
 
     loadConfig();
 });

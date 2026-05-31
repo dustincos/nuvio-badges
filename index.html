@@ -12,7 +12,7 @@
         <ul>
             <li>
                 <strong>🏷️ Nuvio Badges Studio</strong>
-                <span style="font-size: 0.8rem; color: var(--pico-muted-color); display: block; margin-top: 2px;">Minimalist stream ruleset customizer</span>
+                <span style="font-size: 0.8rem; color: var(--pico-muted-color); display: block; margin-top: 2px;">Dynamic preset customizer & visual manager</span>
             </li>
         </ul>
         <ul>
@@ -31,16 +31,67 @@
 
     <main class="container">
         <div class="grid">
+            <!-- LEFT COLUMN: PRESETS & RULE CONFIGURATION -->
             <section>
+                <!-- DYNAMIC QUICK PRESET CARD -->
+                <article class="preset-card">
+                    <header style="margin-bottom: 1rem; border-bottom: 1px solid var(--pico-card-border-color); padding-bottom: 0.5rem;">
+                        <span style="font-weight: bold;">Quick Presets</span>
+                    </header>
+                    
+                    <div class="preset-group">
+                        <div class="preset-header">Icon Style</div>
+                        <div class="preset-opts" data-group="icon">
+                            <div class="preset-opt active" data-value="colored">Colored</div>
+                            <div class="preset-opt" data-value="mono">Mono</div>
+                        </div>
+                    </div>
+
+                    <div class="preset-group">
+                        <div class="preset-header">Quality System</div>
+                        <div class="preset-opts" data-group="qual">
+                            <div class="preset-opt active" data-value="bgb">Best / Good / OK</div>
+                            <div class="preset-opt" data-value="tier">Tiers (T1/T2/T3)</div>
+                            <div class="preset-opt" data-value="src">Source Only</div>
+                            <div class="preset-opt" data-value="pct">Percentages</div>
+                        </div>
+                    </div>
+
+                    <div class="preset-group">
+                        <div class="preset-header">Dolby Vision + Audio</div>
+                        <div class="preset-opts" data-group="dv">
+                            <div class="preset-opt active" data-value="combo">Combined Badge</div>
+                            <div class="preset-opt" data-value="sep">Separate Tags</div>
+                        </div>
+                    </div>
+
+                    <div class="preset-group">
+                        <div class="preset-header">HDR Display</div>
+                        <div class="preset-opts" data-group="hdr">
+                            <div class="preset-opt active" data-value="nodv">Only when no DV</div>
+                            <div class="preset-opt" data-value="always">Always (hybrids)</div>
+                        </div>
+                    </div>
+
+                    <div class="preset-group">
+                        <div class="preset-header">Description</div>
+                        <div class="preset-opts" data-group="desc">
+                            <div class="preset-opt active" data-value="short">Service + Filename</div>
+                            <div class="preset-opt" data-value="fn">Filename Only</div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- CUSTOM BADGE RULES MANAGER -->
                 <article style="margin-top: 0;">
-                    <header style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: bold;">Configuration</span>
+                    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: bold;">Rules Database</span>
                         <span id="badge-count-badge" style="font-size: 0.75rem; color: var(--pico-muted-color);">0 Active</span>
                     </header>
 
-                    <div role="group" style="margin-bottom: 1.5rem;">
-                        <button class="segment-btn active" data-tab="tab-edit" style="font-size: 0.8rem; padding: 0.5rem;">Edit Filters</button>
-                        <button class="segment-btn outline secondary" data-tab="tab-add" style="font-size: 0.8rem; padding: 0.5rem;">Add Badge</button>
+                    <div role="group" style="margin-bottom: 1.25rem;">
+                        <button class="segment-btn active" data-tab="tab-edit" style="font-size: 0.8rem; padding: 0.4rem;">Edit Filters</button>
+                        <button class="segment-btn outline secondary" data-tab="tab-add" style="font-size: 0.8rem; padding: 0.4rem;">Add Badge</button>
                     </div>
 
                     <div class="tab-content" id="tab-edit">
@@ -65,7 +116,7 @@
                             <label>
                                 Regex Matching Pattern
                                 <input type="text" id="new-badge-pattern" placeholder="e.g. (?i)vidlink" required>
-                                <small>Case-insensitive matching keyword for the scraper streams.</small>
+                                <small>Case-insensitive matching keyword for stream scraper results.</small>
                             </label>
 
                             <label>
@@ -144,26 +195,63 @@
                 </article>
             </section>
 
+            <!-- RIGHT COLUMN: SETUP GUIDE & DYNAMIC LIVE PREVIEWS -->
             <section>
-                <article style="margin-top: 0; margin-bottom: 2rem;">
-                    <header><b>Live Stream Preview</b></header>
+                <!-- SETUP INTEGRATION GUIDE -->
+                <article class="guide-card">
+                    <header style="margin-bottom: 1rem; border-bottom: 1px solid var(--pico-card-border-color); padding-bottom: 0.5rem;">
+                        <span style="font-weight: bold;">Integration Guide</span>
+                    </header>
 
-                    <label>
-                        Simulate Stream Title / Description
-                        <input type="text" id="test-stream-title" value="Vidlink | 1080p | TrueHD Atmos | Dual-Audio | WebDL">
-                    </label>
-
-                    <div class="sim-stream-card">
-                        <div class="sim-meta">
-                            <h4 id="n-stream-title" style="margin-bottom: 0.2rem; font-size: 1.05rem;">Vidlink | Auto</h4>
-                            <p id="n-stream-desc" style="font-size: 0.8rem; color: var(--pico-muted-color); margin-bottom: 0;">1080p • 1.54 GB • Multi</p>
+                    <div class="guide-step">
+                        <div class="guide-num">1</div>
+                        <div class="guide-content">
+                            <div class="guide-title">Scraper Template</div>
+                            <div class="guide-desc">In AIOStreams → Featured Templates → Select <b>Tamtaro Complete Setup</b> and load it.</div>
                         </div>
-                        <div class="badges-row" id="n-badges-row"></div>
+                    </div>
+
+                    <div class="guide-step">
+                        <div class="guide-num">2</div>
+                        <div class="guide-content">
+                            <div class="guide-title">Configure Formatter</div>
+                            <div class="guide-desc">AIOStreams → Formatter → Custom → copy and replace both fields below, then Save.</div>
+                            <div class="guide-btn-row">
+                                <button class="guide-btn" id="btn-copy-fname">Copy Name Formatter</button>
+                                <button class="guide-btn" id="btn-copy-fdesc">Copy Desc Formatter</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guide-step">
+                        <div class="guide-num">3</div>
+                        <div class="guide-content">
+                            <div class="guide-title">Import JSON Filters</div>
+                            <div class="guide-desc">In <b>Nuvio</b> (Settings → Connected Services → Badge URLs) paste your generated URL:</div>
+                            <button class="guide-btn" id="btn-copy-import-url" style="margin-top: 0.45rem; width: 100%; text-align: center;">
+                                Copy Badges Import URL
+                            </button>
+                        </div>
                     </div>
                 </article>
 
+                <!-- REAL-TIME PREVIEW SIMULATOR -->
+                <article style="margin-top: 0; margin-bottom: 1.5rem;">
+                    <header style="margin-bottom: 0.8rem;"><b>Interactive Match Preview</b></header>
+
+                    <label style="margin-bottom: 1rem;">
+                        Simulate Custom Stream Title / Description
+                        <input type="text" id="test-stream-title" value="Vidlink | 1080p | TrueHD Atmos | Dual-Audio | WebDL">
+                    </label>
+
+                    <div id="dynamic-preview-list">
+                        <!-- Predefined and Custom matches render here -->
+                    </div>
+                </article>
+
+                <!-- CODE CODE BLOCK VIEWPORT -->
                 <article>
-                    <header><b>Generated badges.json</b></header>
+                    <header><b>Generated badges.json Config</b></header>
                     <div class="code-viewport">
                         <pre><code id="json-code-block" class="language-json">Loading JSON data...</code></pre>
                     </div>
